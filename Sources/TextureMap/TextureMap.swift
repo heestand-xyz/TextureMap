@@ -18,6 +18,42 @@ public struct TextureMap {
     
 }
 
+// MARK: Empty Texture
+
+extension TextureMap {
+    
+    public enum TextureUsage {
+        case renderTarget
+        case write
+        var textureUsage: MTLTextureUsage {
+            switch self {
+            case .renderTarget:
+                return MTLTextureUsage(rawValue: MTLTextureUsage.renderTarget.rawValue | MTLTextureUsage.shaderRead.rawValue)
+            case .write:
+                return MTLTextureUsage(rawValue: MTLTextureUsage.shaderWrite.rawValue | MTLTextureUsage.shaderRead.rawValue)
+            }
+        }
+    }
+    
+    public static func emptyTexture(size: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
+        
+        guard size.width > 0 && size.height > 0 else {
+            throw TMError.sizeIsZero
+        }
+        
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: bits.metalPixelFormat(swapRedAndBlue: swapRedAndBlue), width: Int(size.width), height: Int(size.height), mipmapped: true)
+        
+        descriptor.usage = usage.textureUsage
+        
+        guard let texture = metalDevice.makeTexture(descriptor: descriptor) else {
+            throw TMError.makeTextureFailed
+        }
+        
+        return texture
+    }
+    
+}
+
 // MARK: Texture
 
 extension TextureMap {
@@ -41,6 +77,21 @@ extension TextureMap {
         let cgImage: CGImage = try cgImage(ciImage: ciImage)
         
         return try texture(cgImage: cgImage)
+    }
+    
+    public static func texture(bitmap: NSBitmapImageRep) throws -> MTLTexture {
+        
+        guard let data: UnsafeMutablePointer<UInt8> = bitmap.bitmapData else {
+            throw TMError.bitmapDataNotFound
+        }
+        
+        let texture: MTLTexture = try emptyTexture(size: bitmap.size, bits: ._8)
+
+        let region = MTLRegionMake2D(0, 0, bitmap.pixelsWide, bitmap.pixelsHigh)
+
+        texture.replace(region: region, mipmapLevel: 0, withBytes: data, bytesPerRow: bitmap.bytesPerRow)
+        
+        return texture
     }
     
 }
@@ -159,6 +210,9 @@ extension TextureMap {
         case createCIImageFailed
         case ciImageColorSpaceNotFound
         case tiffRepresentationNotFound
+        case sizeIsZero
+        case makeTextureFailed
+        case bitmapDataNotFound
         public var errorDescription: String? {
             switch self {
             case .cgImageNotFound:
@@ -171,6 +225,12 @@ extension TextureMap {
                 return "Texture Map - CIImage Color Space Not Found"
             case .tiffRepresentationNotFound:
                 return "Texture Map - TIFF Representation Not Found"
+            case .sizeIsZero:
+                return "Texture Map - Size is Zero"
+            case .makeTextureFailed:
+                return "Texture Map - Make Texture Failed"
+            case .bitmapDataNotFound:
+                return "Texture Map - Bitmap Data Not Found"
             }
         }
     }

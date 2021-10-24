@@ -98,6 +98,13 @@ extension TMBits {
         self = try Self(cgImage: cgImage)
     }
     
+    init(bitmap: NSBitmapImageRep) throws {
+        guard let cgImage: CGImage = bitmap.cgImage else {
+            throw TMBitsError.cgImageNotFound
+        }
+        self = try Self(cgImage: cgImage)
+    }
+    
 }
 
 // MARK: Error
