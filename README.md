@@ -1,3 +1,3 @@
-# TextureMap
+# Texture Map
 
-A description of this package.
+Map textures in different formats like UIImage, NSImage, CGImage, CIImage and MTLTexture
