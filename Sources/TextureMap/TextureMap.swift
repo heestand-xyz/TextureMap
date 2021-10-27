@@ -79,6 +79,7 @@ extension TextureMap {
         return try texture(cgImage: cgImage)
     }
     
+#if os(macOS)
     public static func texture(bitmap: NSBitmapImageRep) throws -> MTLTexture {
         
         guard let data: UnsafeMutablePointer<UInt8> = bitmap.bitmapData else {
@@ -93,6 +94,7 @@ extension TextureMap {
         
         return texture
     }
+#endif
     
 }
 
