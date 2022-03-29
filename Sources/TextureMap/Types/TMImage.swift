@@ -24,6 +24,14 @@ public extension Image {
 }
 #endif
 
+public extension TMImage {
+    var texture: MTLTexture {
+        get throws {
+            try TextureMap.texture(image: self)
+        }
+    }
+}
+
 #if os(macOS)
 public extension NSImage {
     func pngData() -> Data? {
