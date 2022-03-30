@@ -65,7 +65,7 @@ extension TMBits {
         self = try Self(metalPixelFormat: texture.pixelFormat)
     }
     
-    init(cgImage: CGImage) throws {
+    public init(cgImage: CGImage) throws {
         var bits: Self!
         switch cgImage.bitsPerComponent {
         case 8:
@@ -78,7 +78,7 @@ extension TMBits {
         self = bits
     }
     
-    init(image: TMImage) throws {
+    public init(image: TMImage) throws {
         #if os(macOS)
         guard let cgImage: CGImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             throw TMBitsError.cgImageNotFound
@@ -91,25 +91,36 @@ extension TMBits {
         self = try Self(cgImage: cgImage)
     }
     
-    init(ciImage: CIImage) throws {
+    public init(ciImage: CIImage) throws {
         guard let cgImage: CGImage = ciImage.cgImage else {
             throw TMBitsError.cgImageNotFound
         }
         self = try Self(cgImage: cgImage)
     }
     
-#if os(macOS)
-    init(bitmap: NSBitmapImageRep) throws {
+    #if os(macOS)
+    public init(bitmap: NSBitmapImageRep) throws {
         guard let cgImage: CGImage = bitmap.cgImage else {
             throw TMBitsError.cgImageNotFound
         }
         self = try Self(cgImage: cgImage)
     }
-#endif
+    #endif
     
 }
 
-// MARK: Error
+// MARK: - Image
+
+extension TMImage {
+    
+    public var bits: TMBits {
+        get throws {
+            try TMBits(image: self)
+        }
+    }
+}
+
+// MARK: - Error
     
 extension TMBits {
     
