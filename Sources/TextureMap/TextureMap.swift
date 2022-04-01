@@ -35,6 +35,30 @@ extension TextureMap {
         }
     }
     
+    public static func emptyTexture(size: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) async throws -> MTLTexture {
+        
+        withCheckedThrowingContinuation { continuation in
+        
+            DispatchQueue.global(qos: .userInteractive).async {
+            
+                do {
+                
+                    let texture = try emptyTexture(size: size, bits: bits, swapRedAndBlue: swapRedAndBlue, usage: usage)
+                    
+                    DispatchQueue.main.async {
+                        continuation.resume(returning: texture)
+                    }
+                    
+                } catch {
+                    
+                    DispatchQueue.main.async {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+        }
+    }
+    
     public static func emptyTexture(size: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
         
         guard size.width > 0 && size.height > 0 else {

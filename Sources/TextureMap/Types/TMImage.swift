@@ -25,9 +25,31 @@ public extension Image {
 #endif
 
 public extension TMImage {
+    
     var texture: MTLTexture {
-        get throws {
-            try TextureMap.texture(image: self)
+    
+        get async throws {
+        
+            withCheckedThrowingContinuation { continuation in
+            
+                DispatchQueue.global(qos: .userInteractive).async {
+                    
+                    do {
+                        
+                        let texture = try TextureMap.texture(image: self)
+                        
+                        DispatchQueue.main.async {
+                            continuation.resume(returning: texture)
+                        }
+                        
+                    } catch {
+                        
+                        DispatchQueue.main.async {
+                            continuation.resume(throwing: error)
+                        }
+                    }
+                }
+            }
         }
     }
 }
