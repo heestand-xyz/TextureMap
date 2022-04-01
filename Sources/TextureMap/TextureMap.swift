@@ -159,6 +159,30 @@ extension TextureMap {
 
 extension TextureMap {
     
+    public static func image(texture: MTLTexture, colorSpace: CGColorSpace = sRGBColorSpace) async throws -> TMImage {
+
+        try await withCheckedThrowingContinuation { continuation in
+            
+            DispatchQueue.global(qos: .userInteractive).async {
+                
+                do {
+                    
+                    let image = try image(texture: texture, colorSpace: colorSpace)
+                    
+                    DispatchQueue.main.async {
+                        continuation.resume(returning: image)
+                    }
+                    
+                } catch {
+                    
+                    DispatchQueue.main.async {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+        }
+    }
+    
     public static func image(texture: MTLTexture, colorSpace: CGColorSpace = sRGBColorSpace) throws -> TMImage {
                 
         let ciImage: CIImage = try ciImage(texture: texture, colorSpace: colorSpace)
