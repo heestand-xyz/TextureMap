@@ -30,7 +30,7 @@ public extension TMImage {
     
         get async throws {
         
-            withCheckedThrowingContinuation { continuation in
+            try await withCheckedThrowingContinuation { continuation in
             
                 DispatchQueue.global(qos: .userInteractive).async {
                     

@@ -37,7 +37,7 @@ extension TextureMap {
     
     public static func emptyTexture(size: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) async throws -> MTLTexture {
         
-        withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
         
             DispatchQueue.global(qos: .userInteractive).async {
             
