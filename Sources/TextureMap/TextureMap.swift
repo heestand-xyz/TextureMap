@@ -15,7 +15,42 @@ public struct TextureMap {
     }()
     
     public static let sRGBColorSpace: CGColorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
+}
+
+// MARK: Errors
+
+extension TextureMap {
     
+    public enum TMError: LocalizedError {
+        case cgImageNotFound
+        case createCGImageFailed
+        case createCIImageFailed
+        case ciImageColorSpaceNotFound
+        case tiffRepresentationNotFound
+        case sizeIsZero
+        case makeTextureFailed
+        case bitmapDataNotFound
+        public var errorDescription: String? {
+            switch self {
+            case .cgImageNotFound:
+                return "Texture Map - CGImage Not Found"
+            case .createCGImageFailed:
+                return "Texture Map - Create CGImage Failed"
+            case .createCIImageFailed:
+                return "Texture Map - Create CIImage Failed"
+            case .ciImageColorSpaceNotFound:
+                return "Texture Map - CIImage Color Space Not Found"
+            case .tiffRepresentationNotFound:
+                return "Texture Map - TIFF Representation Not Found"
+            case .sizeIsZero:
+                return "Texture Map - Size is Zero"
+            case .makeTextureFailed:
+                return "Texture Map - Make Texture Failed"
+            case .bitmapDataNotFound:
+                return "Texture Map - Bitmap Data Not Found"
+            }
+        }
+    }
 }
 
 // MARK: Empty Texture
@@ -75,7 +110,6 @@ extension TextureMap {
         
         return texture
     }
-    
 }
 
 // MARK: Texture
@@ -103,7 +137,7 @@ extension TextureMap {
         return try texture(cgImage: cgImage)
     }
     
-#if os(macOS)
+    #if os(macOS)
     public static func texture(bitmap: NSBitmapImageRep) throws -> MTLTexture {
         
         guard let data: UnsafeMutablePointer<UInt8> = bitmap.bitmapData else {
@@ -118,8 +152,7 @@ extension TextureMap {
         
         return texture
     }
-#endif
-    
+    #endif
 }
 
 // MARK: Image
@@ -136,23 +169,22 @@ extension TextureMap {
     }
     
     public static func image(cgImage: CGImage) throws -> TMImage {
-#if os(macOS)
+        #if os(macOS)
         return NSImage(cgImage: cgImage, size: cgImage.size)
-#else
+        #else
         return UIImage(cgImage: cgImage)
-#endif
+        #endif
     }
     
     public static func image(ciImage: CIImage) throws -> TMImage {
-#if os(macOS)
+        #if os(macOS)
         let cgImage = try cgImage(ciImage: ciImage)
         
         return NSImage(cgImage: cgImage, size: ciImage.extent.size)
-#else
+        #else
         return UIImage(ciImage: ciImage)
-#endif
+        #endif
     }
-    
 }
 
 // MARK: CIImage
@@ -184,7 +216,6 @@ extension TextureMap {
         return ciImage
         #endif
     }
-    
 }
 
 // MARK: CGImage
@@ -194,6 +225,7 @@ extension TextureMap {
     public static func cgImage(ciImage: CIImage) throws -> CGImage {
         
         let bits = try TMBits(ciImage: ciImage)
+     
         guard let colorSpace = ciImage.colorSpace else {
             throw TMError.ciImageColorSpaceNotFound
         }
@@ -208,7 +240,7 @@ extension TextureMap {
     }
     
     public static func cgImage(image: TMImage) throws -> CGImage {
-#if os(macOS)
+        #if os(macOS)
         var imageRect = CGRect(origin: .zero, size: image.size)
         
         guard let cgImage: CGImage = image.cgImage(forProposedRect: &imageRect, context: nil, hints: nil) else {
@@ -216,49 +248,12 @@ extension TextureMap {
         }
         
         return cgImage
-#else
+        #else
         guard let cgImage: CGImage = image.cgImage else {
             throw TMError.cgImageNotFound
         }
         
         return cgImage
-#endif
+        #endif
     }
-}
-
-// MARK: Error
-
-extension TextureMap {
-    
-    public enum TMError: LocalizedError {
-        case cgImageNotFound
-        case createCGImageFailed
-        case createCIImageFailed
-        case ciImageColorSpaceNotFound
-        case tiffRepresentationNotFound
-        case sizeIsZero
-        case makeTextureFailed
-        case bitmapDataNotFound
-        public var errorDescription: String? {
-            switch self {
-            case .cgImageNotFound:
-                return "Texture Map - CGImage Not Found"
-            case .createCGImageFailed:
-                return "Texture Map - Create CGImage Failed"
-            case .createCIImageFailed:
-                return "Texture Map - Create CIImage Failed"
-            case .ciImageColorSpaceNotFound:
-                return "Texture Map - CIImage Color Space Not Found"
-            case .tiffRepresentationNotFound:
-                return "Texture Map - TIFF Representation Not Found"
-            case .sizeIsZero:
-                return "Texture Map - Size is Zero"
-            case .makeTextureFailed:
-                return "Texture Map - Make Texture Failed"
-            case .bitmapDataNotFound:
-                return "Texture Map - Bitmap Data Not Found"
-            }
-        }
-    }
-    
 }
