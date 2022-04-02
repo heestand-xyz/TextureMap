@@ -52,7 +52,7 @@ public extension Bundle {
         #else
         
         guard let image: UIImage = UIImage(named: name, in: self, with: nil) else {
-            throw TMImageBundleError.imageNotFound(name: name)
+            throw TMImageBundleError.imageNotFound(bundle: self, imageName: name)
         }
         
         return image
