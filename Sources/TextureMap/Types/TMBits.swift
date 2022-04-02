@@ -133,11 +133,11 @@ public extension TMBits {
         public var errorDescription: String? {
             switch self {
             case .metalPixelFormatNotSupported(let metalPixelFormat):
-                return "Texture Map - Bits - Metal Pixel Format (\(metalPixelFormat.rawValue)) Not Supported"
+                return "Texture Map - Bits - Metal Pixel Format (\(metalPixelFormat.rawValue)) - Not Supported"
             case .cgImageNotFound:
-                return "Texture Map - Bits - CGImage Not Found"
+                return "Texture Map - Bits - Core Graphics Image - Not Found"
             case .bitsPerComponentNotSupported(let bitsPerComponent):
-                return "Texture Map - Bits - Bits Per Component (\(bitsPerComponent)) Not Supported"
+                return "Texture Map - Bits - Bits Per Component (\(bitsPerComponent)) - Not Supported"
             }
         }
     }

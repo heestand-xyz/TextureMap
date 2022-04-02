@@ -158,7 +158,8 @@ extension TextureMap {
 extension TextureMap {
     
     public static func image(texture: MTLTexture,
-                             colorSpace: TMColorSpace) async throws -> TMImage {
+                             colorSpace: TMColorSpace,
+                             bits: TMBits) async throws -> TMImage {
 
         try await withCheckedThrowingContinuation { continuation in
             
@@ -166,7 +167,7 @@ extension TextureMap {
                 
                 do {
                     
-                    let image = try image(texture: texture, colorSpace: colorSpace)
+                    let image = try image(texture: texture, colorSpace: colorSpace, bits: bits)
                     
                     DispatchQueue.main.async {
                         continuation.resume(returning: image)
@@ -182,13 +183,21 @@ extension TextureMap {
         }
     }
     
-    public static func image(texture: MTLTexture, colorSpace: TMColorSpace) throws -> TMImage {
+    public static func image(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) throws -> TMImage {
                 
         let ciImage: CIImage = try ciImage(texture: texture, colorSpace: colorSpace)
         
-        let cgImage: CGImage = try cgImage(ciImage: ciImage)
+        #if os(macOS)
         
+        let cgImage: CGImage = try cgImage(ciImage: ciImage, bits: bits)
+
         return try image(cgImage: cgImage)
+        
+        #else
+        
+        return UIImage(ciImage: ciImage)
+        
+        #endif
     }
     
     public static func image(cgImage: CGImage) throws -> TMImage {
@@ -216,7 +225,7 @@ extension TextureMap {
     
     public static func ciImage(texture: MTLTexture, colorSpace: TMColorSpace) throws -> CIImage {
         
-        guard let ciImage = CIImage(mtlTexture: texture, options: [.colorSpace: colorSpace]) else {
+        guard let ciImage = CIImage(mtlTexture: texture, options: [.colorSpace: colorSpace.cgColorSpace]) else {
             throw TMError.createCIImageFailed
         }
         
@@ -245,17 +254,21 @@ extension TextureMap {
 
 extension TextureMap {
     
-    public static func cgImage(ciImage: CIImage) throws -> CGImage {
+    public static func cgImage(ciImage: CIImage, colorSpace: TMColorSpace? = nil, bits: TMBits? = nil) throws -> CGImage {
         
-        let bits = try TMBits(ciImage: ciImage)
+        let bits: TMBits = try bits ?? TMBits(ciImage: ciImage)
      
-        guard let colorSpace = ciImage.colorSpace else {
+        guard let colorSpace = colorSpace?.cgColorSpace ?? ciImage.colorSpace else {
             throw TMError.ciImageColorSpaceNotFound
         }
         
         let context = CIContext(options: nil)
         
-        guard let cgImage: CGImage = context.createCGImage(ciImage, from: ciImage.extent, format: bits.ciFormat, colorSpace: colorSpace) else {
+        guard let cgImage: CGImage = context.createCGImage(ciImage,
+                                                           from: ciImage.extent,
+                                                           format: bits.ciFormat,
+                                                           colorSpace: colorSpace) else {
+            #warning("Color Space must be RGB or Monochrome")
             throw TMError.createCGImageFailed
         }
         

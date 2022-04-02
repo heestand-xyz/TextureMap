@@ -5,6 +5,9 @@
 import Foundation
 import CoreGraphics
 import CoreImage
+#if os(macOS)
+import AppKit
+#endif
 
 public enum TMColorSpace: String, Codable, CaseIterable {
     case sRGB

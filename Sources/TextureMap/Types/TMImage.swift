@@ -24,12 +24,49 @@ public extension Image {
 }
 #endif
 
+public extension Bundle {
+    
+    enum TMImageBundleError: LocalizedError {
+        
+        case imageNotFound(bundle: Bundle, imageName: String)
+        
+        public var errorDescription: String? {
+            
+            switch self {
+            case let .imageNotFound(bundle, imageName):
+                return "Texture Map - Bundle (\(bundle.bundleIdentifier ?? "unknown")) - Image - Not Found - Name: \"\(imageName)\""
+            }
+        }
+    }
+    
+    func image(named name: String) throws -> TMImage {
+        
+        #if os(macOS)
+        
+        guard let image: NSImage = image(forResource: name) else {
+            throw TMImageBundleError.imageNotFound(bundle: self, imageName: name)
+        }
+        
+        return image
+        
+        #else
+        
+        guard let image: UIImage = UIImage(named: name, in: self, with: nil) else {
+            throw TMImageBundleError.imageNotFound(name: name)
+        }
+        
+        return image
+        
+        #endif
+    }
+}
+
 public extension TMImage {
     
     var texture: MTLTexture {
     
         get async throws {
-        
+                        
             try await withCheckedThrowingContinuation { continuation in
             
                 DispatchQueue.global(qos: .userInteractive).async {
