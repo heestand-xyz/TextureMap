@@ -46,14 +46,24 @@ public extension TMBits {
 public extension TMBits {
     
     init(metalPixelFormat: MTLPixelFormat) throws {
+        
         var bits: Self?
+        
         for currentBits in Self.allCases {
+        
             if currentBits.metalPixelFormat(swapRedAndBlue: false) == metalPixelFormat {
                 bits = currentBits
             } else if currentBits.metalPixelFormat(swapRedAndBlue: true) == metalPixelFormat {
                 bits = currentBits
             }
         }
+        
+        if bits == nil {
+            if metalPixelFormat == .bgra8Unorm_srgb {
+                bits = ._8
+            }
+        }
+        
         if let bits: Self = bits {
             self = bits
         } else {

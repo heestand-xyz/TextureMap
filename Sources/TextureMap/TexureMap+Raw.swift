@@ -49,6 +49,21 @@ public extension TextureMap {
         return texture
     }
     
+    @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
+    static func texture(raw: UnsafeMutablePointer<Float16>, size: CGSize, on device: MTLDevice) throws -> MTLTexture {
+        let bytesPerRow: Int = Int(size.width) * 4
+        let capacity: Int = bytesPerRow * Int(size.height)
+        let texture = try emptyTexture(size: size, bits: ._16)
+        let region = MTLRegion(origin: MTLOrigin(x: 0, y: 0, z: 0),
+                               size: MTLSize(width: Int(size.width),
+                                             height: Int(size.height),
+                                             depth: 1))
+        raw.withMemoryRebound(to: Float16.self, capacity: capacity) { rawPointer in
+            texture.replace(region: region, mipmapLevel: 0, withBytes: rawPointer, bytesPerRow: bytesPerRow)
+        }
+        return texture
+    }
+    
     static func raw8(texture: MTLTexture) throws -> [UInt8] {
         let bits = try TMBits(texture: texture)
         guard bits == ._8 else {
@@ -147,7 +162,7 @@ public extension TextureMap {
         return raw
     }
     
-    #if !os(macOS) && !targetEnvironment(macCatalyst)
+//    #if !os(macOS) && !targetEnvironment(macCatalyst)
     
     @available(iOS 14.0, *)
     @available(tvOS 14.0, *)
@@ -184,7 +199,7 @@ public extension TextureMap {
         return raw
     }
     
-    #endif
+//    #endif
     
     static func raw32(texture: MTLTexture) throws -> [Float] {
 //        let bits = try TMBits(texture: texture)
@@ -213,6 +228,30 @@ public extension TextureMap {
             texture.getBytes($0.baseAddress!, bytesPerRow: bytesPerRow, bytesPerImage: bytesPerImage, from: region, mipmapLevel: 0, slice: 0)
         }
         return raw
+    }
+    
+    static func rawNormalized(texture: MTLTexture, bits: TMBits) async throws -> [CGFloat] {
+        
+        try await withCheckedThrowingContinuation { continuation in
+            
+            DispatchQueue.global(qos: .userInteractive).async {
+                
+                do {
+                    
+                    let channels = try rawNormalized(texture: texture, bits: bits)
+                    
+                    DispatchQueue.main.async {
+                        continuation.resume(returning: channels)
+                    }
+                    
+                } catch {
+                    
+                    DispatchQueue.main.async {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+        }
     }
     
     static func rawNormalized(texture: MTLTexture, bits: TMBits) throws -> [CGFloat] {
