@@ -14,25 +14,25 @@ public enum TMBits: Int, Codable, CaseIterable {
 
 // MARK: Format
 
-extension TMBits {
+public extension TMBits {
     
     /// Metal Pixel Format
     /// - Parameter swapRedAndBlue: RGBA when `false`, BGRA when `true` *(8 bit only)*
-    public func metalPixelFormat(swapRedAndBlue: Bool = false) -> MTLPixelFormat {
+    func metalPixelFormat(swapRedAndBlue: Bool = false) -> MTLPixelFormat {
         switch self {
         case ._8: return swapRedAndBlue ? .bgra8Unorm : .rgba8Unorm
         case ._16: return .rgba16Float
         }
     }
     
-    public var ciFormat: CIFormat {
+    var ciFormat: CIFormat {
         switch self {
         case ._8: return .RGBA8
         case ._16: return .RGBAh
         }
     }
     
-    public var osType: OSType {
+    var osType: OSType {
         switch self {
         case ._8: return kCVPixelFormatType_32BGRA
         case ._16: return kCVPixelFormatType_128RGBAFloat
@@ -43,9 +43,9 @@ extension TMBits {
 
 // MARK: Init
 
-extension TMBits {
+public extension TMBits {
     
-    public init(metalPixelFormat: MTLPixelFormat) throws {
+    init(metalPixelFormat: MTLPixelFormat) throws {
         var bits: Self?
         for currentBits in Self.allCases {
             if currentBits.metalPixelFormat(swapRedAndBlue: false) == metalPixelFormat {
@@ -61,11 +61,11 @@ extension TMBits {
         }
     }
     
-    public init(texture: MTLTexture) throws {
+    init(texture: MTLTexture) throws {
         self = try Self(metalPixelFormat: texture.pixelFormat)
     }
     
-    public init(cgImage: CGImage) throws {
+    init(cgImage: CGImage) throws {
         var bits: Self!
         switch cgImage.bitsPerComponent {
         case 8:
@@ -78,7 +78,7 @@ extension TMBits {
         self = bits
     }
     
-    public init(image: TMImage) throws {
+    init(image: TMImage) throws {
         #if os(macOS)
         guard let cgImage: CGImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             throw TMBitsError.cgImageNotFound
@@ -91,7 +91,7 @@ extension TMBits {
         self = try Self(cgImage: cgImage)
     }
     
-    public init(ciImage: CIImage) throws {
+    init(ciImage: CIImage) throws {
         guard let cgImage: CGImage = ciImage.cgImage else {
             throw TMBitsError.cgImageNotFound
         }
@@ -99,7 +99,7 @@ extension TMBits {
     }
     
     #if os(macOS)
-    public init(bitmap: NSBitmapImageRep) throws {
+    init(bitmap: NSBitmapImageRep) throws {
         guard let cgImage: CGImage = bitmap.cgImage else {
             throw TMBitsError.cgImageNotFound
         }
@@ -111,9 +111,9 @@ extension TMBits {
 
 // MARK: - Image
 
-extension TMImage {
+public extension TMImage {
     
-    public var bits: TMBits {
+    var bits: TMBits {
         get throws {
             try TMBits(image: self)
         }
@@ -122,22 +122,23 @@ extension TMImage {
 
 // MARK: - Error
     
-extension TMBits {
+public extension TMBits {
     
-    public enum TMBitsError: LocalizedError {
+    enum TMBitsError: LocalizedError {
+        
         case metalPixelFormatNotSupported(MTLPixelFormat)
         case cgImageNotFound
         case bitsPerComponentNotSupported(Int)
+        
         public var errorDescription: String? {
             switch self {
             case .metalPixelFormatNotSupported(let metalPixelFormat):
-                return "Texture Map Bits - Metal Pixel Format (\(metalPixelFormat.rawValue)) Not Supported"
+                return "Texture Map - Bits - Metal Pixel Format (\(metalPixelFormat.rawValue)) Not Supported"
             case .cgImageNotFound:
-                return "Texture Map Bits - CGImage Not Found"
+                return "Texture Map - Bits - CGImage Not Found"
             case .bitsPerComponentNotSupported(let bitsPerComponent):
-                return "Texture Map Bits - Bits Per Component (\(bitsPerComponent)) Not Supported"
+                return "Texture Map - Bits - Bits Per Component (\(bitsPerComponent)) Not Supported"
             }
         }
     }
-    
 }

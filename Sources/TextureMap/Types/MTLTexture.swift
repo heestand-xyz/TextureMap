@@ -10,7 +10,7 @@ import CoreGraphics
 
 public extension MTLTexture {
     
-    func image(colorSpace: CGColorSpace) async throws -> TMImage {
+    func image(colorSpace: TMColorSpace) async throws -> TMImage {
         try await TextureMap.image(texture: self, colorSpace: colorSpace)
     }
 }

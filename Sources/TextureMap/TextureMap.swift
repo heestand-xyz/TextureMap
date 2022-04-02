@@ -13,8 +13,6 @@ public struct TextureMap {
         }
         return metalDevice
     }()
-    
-    public static let sRGBColorSpace: CGColorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
 }
 
 // MARK: Errors
@@ -130,7 +128,7 @@ extension TextureMap {
         return try loader.newTexture(cgImage: cgImage, options: nil)
     }
     
-    public static func texture(ciImage: CIImage, at size: CGSize, colorSpace: CGColorSpace = sRGBColorSpace) throws -> MTLTexture {
+    public static func texture(ciImage: CIImage) throws -> MTLTexture {
         
         let cgImage: CGImage = try cgImage(ciImage: ciImage)
         
@@ -159,7 +157,8 @@ extension TextureMap {
 
 extension TextureMap {
     
-    public static func image(texture: MTLTexture, colorSpace: CGColorSpace = sRGBColorSpace) async throws -> TMImage {
+    public static func image(texture: MTLTexture,
+                             colorSpace: TMColorSpace) async throws -> TMImage {
 
         try await withCheckedThrowingContinuation { continuation in
             
@@ -183,7 +182,7 @@ extension TextureMap {
         }
     }
     
-    public static func image(texture: MTLTexture, colorSpace: CGColorSpace = sRGBColorSpace) throws -> TMImage {
+    public static func image(texture: MTLTexture, colorSpace: TMColorSpace) throws -> TMImage {
                 
         let ciImage: CIImage = try ciImage(texture: texture, colorSpace: colorSpace)
         
@@ -215,7 +214,7 @@ extension TextureMap {
 
 extension TextureMap {
     
-    public static func ciImage(texture: MTLTexture, colorSpace: CGColorSpace = sRGBColorSpace) throws -> CIImage {
+    public static func ciImage(texture: MTLTexture, colorSpace: TMColorSpace) throws -> CIImage {
         
         guard let ciImage = CIImage(mtlTexture: texture, options: [.colorSpace: colorSpace]) else {
             throw TMError.createCIImageFailed
