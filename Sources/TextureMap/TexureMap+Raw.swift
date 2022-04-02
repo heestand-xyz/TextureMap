@@ -260,15 +260,15 @@ public extension TextureMap {
         case ._8:
             raw = try raw8(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) / (pow(2, 8) - 1) })
         case ._16:
-            #if !os(macOS) && !targetEnvironment(macCatalyst)
-            if #available(iOS 14.0, tvOS 14.0, *) {
+//            #if !os(macOS) && !targetEnvironment(macCatalyst)
+            if #available(iOS 14.0, tvOS 14.0, macOS 11.0, *) {
                 raw = try raw16(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
             } else {
                 throw TMRawError.unsupportedOSVersion
             }
-            #else
-            throw TMRawError.unsupportedOS
-            #endif
+//            #else
+//            throw TMRawError.unsupportedOS
+//            #endif
 //        case ._32:
 //            raw = try raw32(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
         }
@@ -294,15 +294,15 @@ public extension TextureMap {
         case ._8:
             raw = try raw3d8(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) / (pow(2, 8) - 1) })
         case ._16:
-            #if !os(macOS) && !targetEnvironment(macCatalyst)
-            if #available(iOS 14.0, tvOS 14.0, *) {
+//            #if !os(macOS) && !targetEnvironment(macCatalyst)
+            if #available(iOS 14.0, tvOS 14.0, macOS 11.0, *) {
                 raw = try raw3d16(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
             } else {
                 throw TMRawError.unsupportedOSVersion
             }
-            #else
-            throw TMRawError.unsupportedOS
-            #endif
+//            #else
+//            throw TMRawError.unsupportedOS
+//            #endif
 //        case ._32:
 //            raw = try raw3d32(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
         }
