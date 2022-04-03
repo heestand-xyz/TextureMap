@@ -270,7 +270,6 @@ extension TextureMap {
                                                            from: ciImage.extent,
                                                            format: bits.ciFormat,
                                                            colorSpace: colorSpace) else {
-            #warning("Color Space must be RGB or Monochrome")
             throw TMError.createCGImageFailed
         }
         
