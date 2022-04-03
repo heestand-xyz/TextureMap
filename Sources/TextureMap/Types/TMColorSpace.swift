@@ -14,7 +14,25 @@ public enum TMColorSpace: String, Codable, CaseIterable {
     case displayP3
 }
 
-// MARK: Format
+// MARK: - Linear
+
+extension TMColorSpace {
+    
+    var linearCGColorSpace: CGColorSpace {
+        switch self {
+        case .sRGB:
+            return CGColorSpace(name: CGColorSpace.linearSRGB)!
+        case .displayP3:
+            if #available(macOS 12.0, *) {
+                return CGColorSpace(name: CGColorSpace.linearDisplayP3)!
+            } else {
+                return CGColorSpace(name: CGColorSpace.displayP3)!
+            }
+        }
+    }
+}
+
+// MARK: - Format
 
 public extension TMColorSpace {
     
@@ -28,7 +46,7 @@ public extension TMColorSpace {
     }
 }
 
-// MARK: Init
+// MARK: - Life Cycle
 
 public extension TMColorSpace {
     
@@ -39,6 +57,11 @@ public extension TMColorSpace {
                 self = colorSpace
                 return
             }
+        }
+        
+        if cgColorSpace.model == .monochrome {
+            self = .sRGB
+            return
         }
         
         throw TMColorSpaceError.notSupported(cgColorSpace)
@@ -118,7 +141,7 @@ public extension TMColorSpace {
             case .cgImageNotFound:
                 return "Texture Map - Color Space - Core Graphics Image Not Found"
             case .notSupported(let colorSpace):
-                return "Texture Map - Color Space - Not Supported (\(String(describing: colorSpace.name))"
+                return "Texture Map - Color Space - Not Supported [\(colorSpace)]"
             }
         }
     }

@@ -125,7 +125,7 @@ extension TextureMap {
         
         let loader = MTKTextureLoader(device: metalDevice)
         
-        return try loader.newTexture(cgImage: cgImage, options: nil)
+        return try loader.newTexture(cgImage: cgImage, options: [.origin: true])
     }
     
     public static func texture(ciImage: CIImage) throws -> MTLTexture {
@@ -225,7 +225,9 @@ extension TextureMap {
     
     public static func ciImage(texture: MTLTexture, colorSpace: TMColorSpace) throws -> CIImage {
         
-        guard let ciImage = CIImage(mtlTexture: texture, options: [.colorSpace: colorSpace.cgColorSpace]) else {
+        guard let ciImage = CIImage(mtlTexture: texture, options: [
+            .colorSpace: colorSpace.linearCGColorSpace,
+        ]) else {
             throw TMError.createCIImageFailed
         }
         
