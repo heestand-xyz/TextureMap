@@ -23,7 +23,7 @@ extension TMColorSpace {
         case .sRGB:
             return CGColorSpace(name: CGColorSpace.linearSRGB)!
         case .displayP3:
-            if #available(macOS 12.0, *) {
+            if #available(iOS 15.0, tvOS 15.0, macOS 12.0, *) {
                 return CGColorSpace(name: CGColorSpace.linearDisplayP3)!
             } else {
                 return CGColorSpace(name: CGColorSpace.displayP3)!
