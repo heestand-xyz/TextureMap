@@ -9,9 +9,25 @@ import CoreImage
 import AppKit
 #endif
 
-public enum TMColorSpace: String, Codable, CaseIterable {
+public enum TMColorSpace/*: String, Codable, CaseIterable*/ {
     case sRGB
     case displayP3
+    case custom(CGColorSpace)
+}
+
+// MARK: - Description
+
+extension TMColorSpace: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .sRGB:
+            return "sRGB"
+        case .displayP3:
+            return "Display P3"
+        case .custom(let cgColorSpace):
+            return "Custom: \(cgColorSpace)"
+        }
+    }
 }
 
 // MARK: - Linear
@@ -28,6 +44,8 @@ extension TMColorSpace {
             } else {
                 return CGColorSpace(name: CGColorSpace.displayP3)!
             }
+        case .custom(let cgColorSpace):
+            return cgColorSpace
         }
     }
 }
@@ -42,6 +60,8 @@ public extension TMColorSpace {
             return CGColorSpace(name: CGColorSpace.sRGB)!
         case .displayP3:
             return CGColorSpace(name: CGColorSpace.displayP3)!
+        case .custom(let cgColorSpace):
+            return cgColorSpace
         }
     }
 }
@@ -52,20 +72,31 @@ public extension TMColorSpace {
     
     init(cgColorSpace: CGColorSpace) throws {
         
-        for colorSpace in TMColorSpace.allCases {
-            if colorSpace.cgColorSpace == cgColorSpace {
-                self = colorSpace
-                return
-            }
-        }
+//        for colorSpace in TMColorSpace.allCases {
+//            if colorSpace.cgColorSpace == cgColorSpace {
+//                self = colorSpace
+//                return
+//            }
+//        }
         
-        switch cgColorSpace.model {
-        case .rgb, .monochrome:
+        if cgColorSpace == TMColorSpace.sRGB.cgColorSpace {
             self = .sRGB
             return
-        default:
-            break
+        } else if cgColorSpace == TMColorSpace.displayP3.cgColorSpace {
+            self = .displayP3
+            return
+        } else {
+            self = .sRGB//custom(cgColorSpace)
+            return
         }
+        
+//        switch cgColorSpace.model {
+//        case .rgb, .monochrome:
+//            self = .sRGB
+//            return
+//        default:
+//            break
+//        }
         
         throw TMColorSpaceError.notSupported(cgColorSpace)
     }
