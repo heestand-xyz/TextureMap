@@ -59,9 +59,12 @@ public extension TMColorSpace {
             }
         }
         
-        if cgColorSpace.model == .monochrome {
+        switch cgColorSpace.model {
+        case .rgb, .monochrome:
             self = .sRGB
             return
+        default:
+            break
         }
         
         throw TMColorSpaceError.notSupported(cgColorSpace)

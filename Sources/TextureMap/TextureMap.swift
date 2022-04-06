@@ -115,17 +115,19 @@ extension TextureMap {
 extension TextureMap {
     
     public static func texture(image: TMImage) throws -> MTLTexture {
-        
+
         let cgImage: CGImage = try cgImage(image: image)
-        
+
         return try texture(cgImage: cgImage)
     }
     
     public static func texture(cgImage: CGImage) throws -> MTLTexture {
-        
+
         let loader = MTKTextureLoader(device: metalDevice)
-        
-        return try loader.newTexture(cgImage: cgImage, options: [.origin: true])
+
+        let texture: MTLTexture = try loader.newTexture(cgImage: cgImage, options: [.origin: true])
+
+        return texture
     }
     
     public static func texture(ciImage: CIImage) throws -> MTLTexture {
