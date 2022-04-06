@@ -10,16 +10,16 @@ import SwiftUI
 public typealias TMImage = NSImage
 public typealias TMImageView = NSImageView
 public extension Image {
-    init(image: NSImage) {
-        self.init(nsImage: image)
+    init(tmImage: NSImage) {
+        self.init(nsImage: tmImage)
     }
 }
 #else
 public typealias TMImage = UIImage
 public typealias TMImageView = UIImageView
 public extension Image {
-    init(image: UIImage) {
-        self.init(uiImage: image)
+    init(tmImage: UIImage) {
+        self.init(uiImage: tmImage)
     }
 }
 #endif
