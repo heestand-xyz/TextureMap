@@ -25,7 +25,7 @@ extension TextureMap {
         case createCIImageFailed
         case ciImageColorSpaceNotFound
         case tiffRepresentationNotFound
-        case sizeIsZero
+        case resolutionIsZero
         case makeTextureFailed
         case bitmapDataNotFound
         public var errorDescription: String? {
@@ -40,8 +40,8 @@ extension TextureMap {
                 return "Texture Map - CIImage Color Space Not Found"
             case .tiffRepresentationNotFound:
                 return "Texture Map - TIFF Representation Not Found"
-            case .sizeIsZero:
-                return "Texture Map - Size is Zero"
+            case .resolutionIsZero:
+                return "Texture Map - Resolution is Zero"
             case .makeTextureFailed:
                 return "Texture Map - Make Texture Failed"
             case .bitmapDataNotFound:
@@ -68,7 +68,7 @@ extension TextureMap {
         }
     }
     
-    public static func emptyTexture(size: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) async throws -> MTLTexture {
+    public static func emptyTexture(resolution: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) async throws -> MTLTexture {
         
         try await withCheckedThrowingContinuation { continuation in
         
@@ -76,7 +76,7 @@ extension TextureMap {
             
                 do {
                 
-                    let texture = try emptyTexture(size: size, bits: bits, swapRedAndBlue: swapRedAndBlue, usage: usage)
+                    let texture = try emptyTexture(resolution: resolution, bits: bits, swapRedAndBlue: swapRedAndBlue, usage: usage)
                     
                     DispatchQueue.main.async {
                         continuation.resume(returning: texture)
@@ -92,13 +92,13 @@ extension TextureMap {
         }
     }
     
-    public static func emptyTexture(size: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
+    public static func emptyTexture(resolution: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
         
-        guard size.width > 0 && size.height > 0 else {
-            throw TMError.sizeIsZero
+        guard resolution.width > 0 && resolution.height > 0 else {
+            throw TMError.resolutionIsZero
         }
         
-        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: bits.metalPixelFormat(swapRedAndBlue: swapRedAndBlue), width: Int(size.width), height: Int(size.height), mipmapped: true)
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: bits.metalPixelFormat(swapRedAndBlue: swapRedAndBlue), width: Int(resolution.width), height: Int(resolution.height), mipmapped: true)
         
         descriptor.usage = usage.textureUsage
         
@@ -106,6 +106,27 @@ extension TextureMap {
             throw TMError.makeTextureFailed
         }
         
+        return texture
+    }
+    
+    public static func emptyTexture3d(resolution: SIMD3<Int>, bits: TMBits, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
+
+        guard resolution.x > 0 && resolution.y > 0 && resolution.z > 0 else {
+            throw TMError.resolutionIsZero
+        }
+
+        let descriptor = MTLTextureDescriptor()
+        descriptor.pixelFormat = bits.metalPixelFormat()
+        descriptor.textureType = .type3D
+        descriptor.width = resolution.x
+        descriptor.height = resolution.y
+        descriptor.depth = resolution.z
+        descriptor.usage = usage.textureUsage
+
+        guard let texture = metalDevice.makeTexture(descriptor: descriptor) else {
+            throw TMError.makeTextureFailed
+        }
+
         return texture
     }
 }
@@ -144,7 +165,7 @@ extension TextureMap {
             throw TMError.bitmapDataNotFound
         }
         
-        let texture: MTLTexture = try emptyTexture(size: bitmap.size, bits: ._8)
+        let texture: MTLTexture = try emptyTexture(resolution: bitmap.size, bits: ._8)
 
         let region = MTLRegionMake2D(0, 0, bitmap.pixelsWide, bitmap.pixelsHigh)
 

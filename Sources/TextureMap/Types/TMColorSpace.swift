@@ -98,7 +98,7 @@ public extension TMColorSpace {
 //            break
 //        }
         
-        throw TMColorSpaceError.notSupported(cgColorSpace)
+//        throw TMColorSpaceError.notSupported(cgColorSpace)
     }
     
     init(cgImage: CGImage) throws {
