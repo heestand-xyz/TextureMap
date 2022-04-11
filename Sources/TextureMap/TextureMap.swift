@@ -7,7 +7,7 @@ import MetalKit
 
 public struct TextureMap {
     
-    private static let metalDevice: MTLDevice = {
+    static let metalDevice: MTLDevice = {
         guard let metalDevice = MTLCreateSystemDefaultDevice() else {
             fatalError("TextureMap: Default metal device not found.")
         }
@@ -17,9 +17,9 @@ public struct TextureMap {
 
 // MARK: Errors
 
-extension TextureMap {
+public extension TextureMap {
     
-    public enum TMError: LocalizedError {
+    enum TMError: LocalizedError {
         case cgImageNotFound
         case createCGImageFailed
         case createCIImageFailed
@@ -53,9 +53,9 @@ extension TextureMap {
 
 // MARK: Empty Texture
 
-extension TextureMap {
+public extension TextureMap {
     
-    public enum TextureUsage {
+    enum TextureUsage {
         case renderTarget
         case write
         var textureUsage: MTLTextureUsage {
@@ -68,7 +68,7 @@ extension TextureMap {
         }
     }
     
-    public static func emptyTexture(resolution: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) async throws -> MTLTexture {
+    static func emptyTexture(resolution: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) async throws -> MTLTexture {
         
         try await withCheckedThrowingContinuation { continuation in
         
@@ -92,7 +92,7 @@ extension TextureMap {
         }
     }
     
-    public static func emptyTexture(resolution: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
+    static func emptyTexture(resolution: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
         
         guard resolution.width > 0 && resolution.height > 0 else {
             throw TMError.resolutionIsZero
@@ -109,7 +109,7 @@ extension TextureMap {
         return texture
     }
     
-    public static func emptyTexture3d(resolution: SIMD3<Int>, bits: TMBits, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
+    static func emptyTexture3d(resolution: SIMD3<Int>, bits: TMBits, usage: TextureUsage) throws -> MTLTexture {
 
         guard resolution.x > 0 && resolution.y > 0 && resolution.z > 0 else {
             throw TMError.resolutionIsZero
@@ -133,16 +133,16 @@ extension TextureMap {
 
 // MARK: Texture
 
-extension TextureMap {
+public extension TextureMap {
     
-    public static func texture(image: TMImage) throws -> MTLTexture {
+    static func texture(image: TMImage) throws -> MTLTexture {
 
         let cgImage: CGImage = try cgImage(image: image)
 
         return try texture(cgImage: cgImage)
     }
     
-    public static func texture(cgImage: CGImage) throws -> MTLTexture {
+    static func texture(cgImage: CGImage) throws -> MTLTexture {
 
         let loader = MTKTextureLoader(device: metalDevice)
 
@@ -151,7 +151,7 @@ extension TextureMap {
         return texture
     }
     
-    public static func texture(ciImage: CIImage) throws -> MTLTexture {
+    static func texture(ciImage: CIImage) throws -> MTLTexture {
         
         let cgImage: CGImage = try cgImage(ciImage: ciImage)
         
@@ -159,7 +159,7 @@ extension TextureMap {
     }
     
     #if os(macOS)
-    public static func texture(bitmap: NSBitmapImageRep) throws -> MTLTexture {
+    static func texture(bitmap: NSBitmapImageRep) throws -> MTLTexture {
         
         guard let data: UnsafeMutablePointer<UInt8> = bitmap.bitmapData else {
             throw TMError.bitmapDataNotFound
@@ -178,9 +178,9 @@ extension TextureMap {
 
 // MARK: Image
 
-extension TextureMap {
+public extension TextureMap {
     
-    public static func image(texture: MTLTexture,
+    static func image(texture: MTLTexture,
                              colorSpace: TMColorSpace,
                              bits: TMBits) async throws -> TMImage {
 
@@ -206,7 +206,7 @@ extension TextureMap {
         }
     }
     
-    public static func image(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) throws -> TMImage {
+    static func image(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) throws -> TMImage {
                 
         let ciImage: CIImage = try ciImage(texture: texture, colorSpace: colorSpace)
         
@@ -223,7 +223,7 @@ extension TextureMap {
         #endif
     }
     
-    public static func image(cgImage: CGImage) throws -> TMImage {
+    static func image(cgImage: CGImage) throws -> TMImage {
         #if os(macOS)
         return NSImage(cgImage: cgImage, size: cgImage.size)
         #else
@@ -231,7 +231,7 @@ extension TextureMap {
         #endif
     }
     
-    public static func image(ciImage: CIImage) throws -> TMImage {
+    static func image(ciImage: CIImage) throws -> TMImage {
         #if os(macOS)
         let cgImage = try cgImage(ciImage: ciImage)
         
@@ -244,9 +244,9 @@ extension TextureMap {
 
 // MARK: CIImage
 
-extension TextureMap {
+public extension TextureMap {
     
-    public static func ciImage(texture: MTLTexture, colorSpace: TMColorSpace) throws -> CIImage {
+    static func ciImage(texture: MTLTexture, colorSpace: TMColorSpace) throws -> CIImage {
         
         guard let ciImage = CIImage(mtlTexture: texture, options: [
             .colorSpace: colorSpace.linearCGColorSpace,
@@ -257,7 +257,7 @@ extension TextureMap {
         return ciImage
     }
     
-    public static func ciImage(image: TMImage) throws -> CIImage {
+    static func ciImage(image: TMImage) throws -> CIImage {
         #if os(macOS)
         guard let data = image.tiffRepresentation else {
             throw TMError.tiffRepresentationNotFound
@@ -277,9 +277,9 @@ extension TextureMap {
 
 // MARK: CGImage
 
-extension TextureMap {
+public extension TextureMap {
     
-    public static func cgImage(ciImage: CIImage, colorSpace: TMColorSpace? = nil, bits: TMBits? = nil) throws -> CGImage {
+    static func cgImage(ciImage: CIImage, colorSpace: TMColorSpace? = nil, bits: TMBits? = nil) throws -> CGImage {
         
         let bits: TMBits = try bits ?? TMBits(ciImage: ciImage)
      
@@ -299,7 +299,7 @@ extension TextureMap {
         return cgImage
     }
     
-    public static func cgImage(image: TMImage) throws -> CGImage {
+    static func cgImage(image: TMImage) throws -> CGImage {
         #if os(macOS)
         var imageRect = CGRect(origin: .zero, size: image.size)
         
@@ -317,3 +317,4 @@ extension TextureMap {
         #endif
     }
 }
+
