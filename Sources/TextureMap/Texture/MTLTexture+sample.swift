@@ -3,6 +3,7 @@
 //
 
 import Metal
+import CoreGraphics
 
 enum TMSampleError: LocalizedError {
     
