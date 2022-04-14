@@ -7,12 +7,15 @@ import CoreGraphics
 
 enum TMSampleError: LocalizedError {
     
+    case indexOutOfBounds
     case makeCommandQueueFailed
     case makeCommandBufferFailed
     case makeBlitCommandEncoderFailed
     
     public var errorDescription: String? {
         switch self {
+        case .indexOutOfBounds:
+            return "Texture Map - Sample - Index Out of Bounds"
         case .makeCommandQueueFailed:
             return "Texture Map - Sample - Make Command Queue Failed"
         case .makeCommandBufferFailed:
@@ -27,6 +30,22 @@ public extension MTLTexture {
     
     func sample3d(index: Int, axis: TMAxis, bits: TMBits) async throws -> MTLTexture {
         
+        let length: Int = {
+            switch axis {
+            case .x:
+                return width
+            case .y:
+                return height
+            case .z:
+                return depth
+            }
+        }()
+        
+        guard index >= 0 && index < length else {
+            throw TMSampleError.indexOutOfBounds
+        }
+
+                
         let resolution: CGSize = CGSize(width: axis == .x ? depth : width,
                                         height: axis == .y ? depth : height)
         
