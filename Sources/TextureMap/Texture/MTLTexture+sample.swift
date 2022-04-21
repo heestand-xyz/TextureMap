@@ -44,7 +44,6 @@ public extension MTLTexture {
         guard index >= 0 && index < length else {
             throw TMSampleError.indexOutOfBounds
         }
-
                 
         let resolution: CGSize = CGSize(width: axis == .x ? depth : width,
                                         height: axis == .y ? depth : height)
