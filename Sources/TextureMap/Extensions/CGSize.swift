@@ -10,7 +10,6 @@ extension MTLTexture {
     public var size: CGSize {
         CGSize(width: width, height: height)
     }
-    
 }
 
 
@@ -19,5 +18,4 @@ extension CGImage {
     public var size: CGSize {
         CGSize(width: width, height: height)
     }
-    
 }
