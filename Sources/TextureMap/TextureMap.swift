@@ -25,7 +25,8 @@ public extension TextureMap {
         case createCIImageFailed
         case ciImageColorSpaceNotFound
         case tiffRepresentationNotFound
-        case resolutionIsZero
+        case resolutionZero
+        case resolutionTooHigh(maximum: Int)
         case makeTextureFailed
         case bitmapDataNotFound
         public var errorDescription: String? {
@@ -40,8 +41,10 @@ public extension TextureMap {
                 return "Texture Map - CIImage Color Space Not Found"
             case .tiffRepresentationNotFound:
                 return "Texture Map - TIFF Representation Not Found"
-            case .resolutionIsZero:
-                return "Texture Map - Resolution is Zero"
+            case .resolutionZero:
+                return "Texture Map - Resolution Zero"
+            case .resolutionTooHigh(let maximum):
+                return "Texture Map - Resolution too High (Maximum: \(maximum))"
             case .makeTextureFailed:
                 return "Texture Map - Make Texture Failed"
             case .bitmapDataNotFound:
@@ -95,7 +98,7 @@ public extension TextureMap {
     static func emptyTexture(resolution: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
         
         guard resolution.width > 0 && resolution.height > 0 else {
-            throw TMError.resolutionIsZero
+            throw TMError.resolutionZero
         }
         
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: bits.metalPixelFormat(swapRedAndBlue: swapRedAndBlue), width: Int(resolution.width), height: Int(resolution.height), mipmapped: true)
@@ -112,7 +115,12 @@ public extension TextureMap {
     static func emptyTexture3d(resolution: SIMD3<Int>, bits: TMBits, usage: TextureUsage) throws -> MTLTexture {
 
         guard resolution.x > 0 && resolution.y > 0 && resolution.z > 0 else {
-            throw TMError.resolutionIsZero
+            throw TMError.resolutionZero
+        }
+        
+        let maximum = 2048
+        guard resolution.x <= maximum && resolution.y <= maximum && resolution.z <= maximum else {
+            throw TMError.resolutionTooHigh(maximum: maximum)
         }
 
         let descriptor = MTLTextureDescriptor()
