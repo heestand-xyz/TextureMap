@@ -154,7 +154,7 @@ public extension TextureMap {
 
         let loader = MTKTextureLoader(device: metalDevice)
 
-        let texture: MTLTexture = try loader.newTexture(cgImage: cgImage, options: [.origin: true])
+        let texture: MTLTexture = try loader.newTexture(cgImage: cgImage, options: nil)
 
         return texture
     }
@@ -188,11 +188,13 @@ public extension TextureMap {
 
 public extension TextureMap {
     
-    static func image(texture: MTLTexture,
-                             colorSpace: TMColorSpace,
-                             bits: TMBits) async throws -> TMImage {
+    static func image(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) async throws -> TMImage {
+        
+//        let texture: MTLTexture = try await texture.convertToLinearColorSpace(from: colorSpace.cgColorSpace)
+        
+//        let texture: MTLTexture = try await texture.flipY()
 
-        try await withCheckedThrowingContinuation { continuation in
+        return try await withCheckedThrowingContinuation { continuation in
             
             DispatchQueue.global(qos: .userInteractive).async {
                 
@@ -214,21 +216,13 @@ public extension TextureMap {
         }
     }
     
-    static func image(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) throws -> TMImage {
+    private static func image(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) throws -> TMImage {
                 
         let ciImage: CIImage = try ciImage(texture: texture, colorSpace: colorSpace)
-        
-        #if os(macOS)
         
         let cgImage: CGImage = try cgImage(ciImage: ciImage, bits: bits)
 
         return try image(cgImage: cgImage)
-        
-        #else
-        
-        return UIImage(ciImage: ciImage)
-        
-        #endif
     }
     
     static func image(cgImage: CGImage) throws -> TMImage {
@@ -257,7 +251,7 @@ public extension TextureMap {
     static func ciImage(texture: MTLTexture, colorSpace: TMColorSpace) throws -> CIImage {
         
         guard let ciImage = CIImage(mtlTexture: texture, options: [
-            .colorSpace: colorSpace.linearCGColorSpace,
+            .colorSpace: colorSpace.cgColorSpace, // colorSpace.linearCGColorSpace
         ]) else {
             throw TMError.createCIImageFailed
         }
@@ -291,7 +285,7 @@ public extension TextureMap {
         
         let bits: TMBits = try bits ?? TMBits(ciImage: ciImage)
      
-        guard let colorSpace = colorSpace?.cgColorSpace ?? ciImage.colorSpace else {
+        guard let cgColorSpace: CGColorSpace = colorSpace?.cgColorSpace ?? ciImage.colorSpace else {
             throw TMError.ciImageColorSpaceNotFound
         }
         
@@ -300,7 +294,7 @@ public extension TextureMap {
         guard let cgImage: CGImage = context.createCGImage(ciImage,
                                                            from: ciImage.extent,
                                                            format: bits.ciFormat,
-                                                           colorSpace: colorSpace) else {
+                                                           colorSpace: cgColorSpace) else {
             throw TMError.createCGImageFailed
         }
         
