@@ -190,11 +190,7 @@ public extension TextureMap {
     
     static func image(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) async throws -> TMImage {
         
-//        let texture: MTLTexture = try await texture.convertToLinearColorSpace(from: colorSpace.cgColorSpace)
-        
-//        let texture: MTLTexture = try await texture.flipY()
-
-        return try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             
             DispatchQueue.global(qos: .userInteractive).async {
                 
