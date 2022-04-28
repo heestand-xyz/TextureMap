@@ -9,7 +9,7 @@ import CoreImage
 import AppKit
 #endif
 
-public enum TMColorSpace/*: String, Codable, CaseIterable*/ {
+public enum TMColorSpace: Equatable /*, String, Codable, CaseIterable*/ {
     case sRGB
     case displayP3
     case custom(CGColorSpace)
@@ -79,11 +79,11 @@ public extension TMColorSpace {
 //            }
 //        }
         
-        if cgColorSpace == TMColorSpace.sRGB.cgColorSpace {
-            self = .sRGB
-            return
-        } else if cgColorSpace == TMColorSpace.displayP3.cgColorSpace {
+        if cgColorSpace == TMColorSpace.displayP3.cgColorSpace || cgColorSpace.name == CGColorSpace.extendedSRGB {
             self = .displayP3
+            return
+        } else if cgColorSpace == TMColorSpace.sRGB.cgColorSpace {
+            self = .sRGB
             return
         } else {
             self = .sRGB//custom(cgColorSpace)
@@ -113,16 +113,41 @@ public extension TMColorSpace {
     init(image: TMImage) throws {
 
         #if os(macOS)
-        guard let cgImage: CGImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            throw TMColorSpaceError.cgImageNotFound
+        
+        if image.representations.isEmpty {
+            throw TMColorSpaceError.noRepresentationsFound
         }
+        
+        let colorSpaces: [TMColorSpace] = try image.representations.map { representation in
+            guard let cgImage: CGImage = representation.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                throw TMColorSpaceError.cgImageNotFound
+            }
+            return try TMColorSpace(cgImage: cgImage)
+        }
+        
+        if colorSpaces.contains(.displayP3) {
+            
+            self = .displayP3
+            
+        } else {
+            
+            guard let cgImage: CGImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                throw TMColorSpaceError.cgImageNotFound
+            }
+            
+            try self.init(cgImage: cgImage)
+        }
+        
         #else
+        
         guard let cgImage: CGImage = image.cgImage else {
             throw TMColorSpaceError.cgImageNotFound
         }
-        #endif
         
         try self.init(cgImage: cgImage)
+
+        #endif
+        
     }
     
     init(ciImage: CIImage) throws {
@@ -167,6 +192,7 @@ public extension TMColorSpace {
         case notFound
         case cgImageNotFound
         case notSupported(CGColorSpace)
+        case noRepresentationsFound
         
         public var errorDescription: String? {
             switch self {
@@ -176,6 +202,8 @@ public extension TMColorSpace {
                 return "Texture Map - Color Space - Core Graphics Image Not Found"
             case .notSupported(let colorSpace):
                 return "Texture Map - Color Space - Not Supported [\(colorSpace)]"
+            case .noRepresentationsFound:
+                return "Texture Map - Color Space - No Representations Found"
             }
         }
     }
