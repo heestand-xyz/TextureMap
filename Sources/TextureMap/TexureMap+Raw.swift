@@ -49,7 +49,7 @@ public extension TextureMap {
         return texture
     }
     
-    #if !os(macOS) && targetEnvironment(macCatalyst) // Until macOS has Float16 support
+    #if !os(macOS) && !targetEnvironment(macCatalyst) // Until macOS has Float16 support
     @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
     static func texture(raw: UnsafeMutablePointer<Float16>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
         let bytesPerRow: Int = Int(resolution.width) * 4
@@ -164,7 +164,7 @@ public extension TextureMap {
         return raw
     }
     
-    #if !os(macOS) && targetEnvironment(macCatalyst) // Until macOS has Float16 support
+    #if !os(macOS) && !targetEnvironment(macCatalyst) // Until macOS has Float16 support
     @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
     static func raw16(texture: MTLTexture) throws -> [Float16] {
         let bits = try TMBits(texture: texture)
@@ -181,7 +181,7 @@ public extension TextureMap {
     }
     #endif
     
-    #if !os(macOS) && targetEnvironment(macCatalyst) // Until macOS has Float16 support
+    #if !os(macOS) && !targetEnvironment(macCatalyst) // Until macOS has Float16 support
     @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
     static func raw3d16(texture: MTLTexture) throws -> [Float16] {
         let bits = try TMBits(texture: texture)
@@ -260,7 +260,7 @@ public extension TextureMap {
         case ._8:
             raw = try raw8(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) / (pow(2, 8) - 1) })
         case ._16:
-            #if !os(macOS) && targetEnvironment(macCatalyst) // Until macOS has Float16 support
+            #if !os(macOS) && !targetEnvironment(macCatalyst) // Until macOS has Float16 support
             if #available(iOS 14.0, tvOS 14.0, macOS 11.0, *) {
                 raw = try raw16(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
             } else {
@@ -318,7 +318,7 @@ public extension TextureMap {
         case ._8:
             raw = try raw3d8(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) / (pow(2, 8) - 1) })
         case ._16:
-            #if !os(macOS) && targetEnvironment(macCatalyst) // Until macOS has Float16 support
+            #if !os(macOS) && !targetEnvironment(macCatalyst) // Until macOS has Float16 support
             if #available(iOS 14.0, tvOS 14.0, macOS 11.0, *) {
                 raw = try raw3d16(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
             } else {
