@@ -247,7 +247,7 @@ public extension TextureMap {
     static func ciImage(texture: MTLTexture, colorSpace: TMColorSpace) throws -> CIImage {
         
         guard let ciImage = CIImage(mtlTexture: texture, options: [
-            .colorSpace: colorSpace.cgColorSpace, // colorSpace.linearCGColorSpace
+            .colorSpace: colorSpace.cgColorSpace
         ]) else {
             throw TMError.createCIImageFailed
         }
@@ -276,6 +276,13 @@ public extension TextureMap {
 // MARK: CGImage
 
 public extension TextureMap {
+    
+    static func cgImage(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) throws -> CGImage {
+        
+        let ciImage = try ciImage(texture: texture, colorSpace: colorSpace)
+        
+        return try cgImage(ciImage: ciImage, colorSpace: colorSpace, bits: bits)
+    }
     
     static func cgImage(ciImage: CIImage, colorSpace: TMColorSpace? = nil, bits: TMBits? = nil) throws -> CGImage {
         
@@ -316,3 +323,79 @@ public extension TextureMap {
     }
 }
 
+// MARK: CVPixelBuffer
+
+extension TextureMap {
+    
+    enum PixelBufferError: LocalizedError {
+        
+        case cvPixelBufferCreateFailed
+        case cvPixelBufferLockBaseAddressFailed
+        case cgContextFailed
+        
+        var errorDescription: String? {
+            switch self {
+            case .cvPixelBufferCreateFailed:
+                return "TextureMap - Pixel Buffer - Create Failed"
+            case .cvPixelBufferLockBaseAddressFailed:
+                return "TextureMap - Pixel Buffer - Lock Base Address Failed"
+            case .cgContextFailed:
+                return "TextureMap - Pixel Buffer - Context Failed"
+            }
+        }
+    }
+    
+    public static func pixelBuffer(texture: MTLTexture, colorSpace: TMColorSpace) throws -> CVPixelBuffer {
+        
+        let bits = try TMBits(texture: texture)
+
+        let cgImage: CGImage = try cgImage(texture: texture, colorSpace: colorSpace, bits: bits)
+
+        let pixelBuffer: CVPixelBuffer = try pixelBuffer(cgImage: cgImage, colorSpace: colorSpace, bits: bits)
+
+        return pixelBuffer
+    }
+    
+    public static func pixelBuffer(cgImage: CGImage, colorSpace: TMColorSpace, bits: TMBits) throws -> CVPixelBuffer {
+        
+        var optionalPixelBuffer: CVPixelBuffer?
+        
+        let attributes: [CFString: Any] = [
+            kCVPixelBufferPixelFormatTypeKey: Int(bits.osType) as CFNumber,
+            kCVPixelBufferCGImageCompatibilityKey: kCFBooleanTrue!,
+            kCVPixelBufferCGBitmapContextCompatibilityKey: kCFBooleanTrue!,
+            kCVPixelBufferMetalCompatibilityKey: kCFBooleanTrue!,
+        ]
+        
+        let status = CVPixelBufferCreate(kCFAllocatorDefault,
+                                         cgImage.width,
+                                         cgImage.height,
+                                         bits.osType,
+                                         attributes as CFDictionary,
+                                         &optionalPixelBuffer)
+        
+        guard status == kCVReturnSuccess, let pixelBuffer = optionalPixelBuffer else {
+            throw PixelBufferError.cvPixelBufferCreateFailed
+        }
+        
+        let flags = CVPixelBufferLockFlags(rawValue: 0)
+        guard kCVReturnSuccess == CVPixelBufferLockBaseAddress(pixelBuffer, flags) else {
+            throw PixelBufferError.cvPixelBufferLockBaseAddressFailed
+        }
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, flags) }
+        
+        guard let context = CGContext(data: CVPixelBufferGetBaseAddress(pixelBuffer),
+                                      width: cgImage.width,
+                                      height: cgImage.height,
+                                      bitsPerComponent: bits.rawValue,
+                                      bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer),
+                                      space: colorSpace.cgColorSpace,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+            throw PixelBufferError.cgContextFailed
+        }
+        
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: cgImage.width, height: cgImage.height))
+        
+        return pixelBuffer
+    }
+}
