@@ -231,9 +231,10 @@ public extension TextureMap {
     
     static func image(ciImage: CIImage) throws -> TMImage {
         #if os(macOS)
-        let cgImage = try cgImage(ciImage: ciImage)
-        
-        return NSImage(cgImage: cgImage, size: ciImage.extent.size)
+        let rep = NSCIImageRep(ciImage: ciImage)
+        let nsImage = NSImage(size: rep.size)
+        nsImage.addRepresentation(rep)
+        return nsImage
         #else
         return UIImage(ciImage: ciImage)
         #endif
