@@ -15,130 +15,6 @@ public struct TextureMap {
     }()
 }
 
-// MARK: Errors
-
-public extension TextureMap {
-    
-    enum TMError: LocalizedError {
-        case cgImageNotFound
-        case createCGImageFailed
-        case createCIImageFailed
-        case ciImageColorSpaceNotFound
-        case tiffRepresentationNotFound
-        case resolutionZero
-        case resolutionTooHigh(maximum: Int)
-        case makeTextureFailed
-        case bitmapDataNotFound
-        public var errorDescription: String? {
-            switch self {
-            case .cgImageNotFound:
-                return "Texture Map - CGImage Not Found"
-            case .createCGImageFailed:
-                return "Texture Map - Create CGImage Failed"
-            case .createCIImageFailed:
-                return "Texture Map - Create CIImage Failed"
-            case .ciImageColorSpaceNotFound:
-                return "Texture Map - CIImage Color Space Not Found"
-            case .tiffRepresentationNotFound:
-                return "Texture Map - TIFF Representation Not Found"
-            case .resolutionZero:
-                return "Texture Map - Resolution Zero"
-            case .resolutionTooHigh(let maximum):
-                return "Texture Map - Resolution too High (Maximum: \(maximum))"
-            case .makeTextureFailed:
-                return "Texture Map - Make Texture Failed"
-            case .bitmapDataNotFound:
-                return "Texture Map - Bitmap Data Not Found"
-            }
-        }
-    }
-}
-
-// MARK: Empty Texture
-
-public extension TextureMap {
-    
-    enum TextureUsage {
-        case renderTarget
-        case write
-        var textureUsage: MTLTextureUsage {
-            switch self {
-            case .renderTarget:
-                return MTLTextureUsage(rawValue: MTLTextureUsage.renderTarget.rawValue | MTLTextureUsage.shaderRead.rawValue)
-            case .write:
-                return MTLTextureUsage(rawValue: MTLTextureUsage.shaderWrite.rawValue | MTLTextureUsage.shaderRead.rawValue)
-            }
-        }
-    }
-    
-    static func emptyTexture(resolution: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) async throws -> MTLTexture {
-        
-        try await withCheckedThrowingContinuation { continuation in
-        
-            DispatchQueue.global(qos: .userInteractive).async {
-            
-                do {
-                
-                    let texture = try emptyTexture(resolution: resolution, bits: bits, swapRedAndBlue: swapRedAndBlue, usage: usage)
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume(returning: texture)
-                    }
-                    
-                } catch {
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume(throwing: error)
-                    }
-                }
-            }
-        }
-    }
-    
-    static func emptyTexture(resolution: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
-        
-        guard resolution.width > 0 && resolution.height > 0 else {
-            throw TMError.resolutionZero
-        }
-        
-        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: bits.metalPixelFormat(swapRedAndBlue: swapRedAndBlue), width: Int(resolution.width), height: Int(resolution.height), mipmapped: true)
-        
-        descriptor.usage = usage.textureUsage
-        
-        guard let texture = metalDevice.makeTexture(descriptor: descriptor) else {
-            throw TMError.makeTextureFailed
-        }
-        
-        return texture
-    }
-    
-    static func emptyTexture3d(resolution: SIMD3<Int>, bits: TMBits, usage: TextureUsage) throws -> MTLTexture {
-
-        guard resolution.x > 0 && resolution.y > 0 && resolution.z > 0 else {
-            throw TMError.resolutionZero
-        }
-        
-        let maximum = 2048
-        guard resolution.x <= maximum && resolution.y <= maximum && resolution.z <= maximum else {
-            throw TMError.resolutionTooHigh(maximum: maximum)
-        }
-
-        let descriptor = MTLTextureDescriptor()
-        descriptor.pixelFormat = bits.metalPixelFormat()
-        descriptor.textureType = .type3D
-        descriptor.width = resolution.x
-        descriptor.height = resolution.y
-        descriptor.depth = resolution.z
-        descriptor.usage = usage.textureUsage
-
-        guard let texture = metalDevice.makeTexture(descriptor: descriptor) else {
-            throw TMError.makeTextureFailed
-        }
-
-        return texture
-    }
-}
-
 // MARK: Texture
 
 public extension TextureMap {
@@ -173,7 +49,7 @@ public extension TextureMap {
             throw TMError.bitmapDataNotFound
         }
         
-        let texture: MTLTexture = try emptyTexture(resolution: bitmap.size, bits: ._8)
+        let texture: MTLTexture = try .empty(resolution: bitmap.size, bits: ._8)
 
         let region = MTLRegionMake2D(0, 0, bitmap.pixelsWide, bitmap.pixelsHigh)
 

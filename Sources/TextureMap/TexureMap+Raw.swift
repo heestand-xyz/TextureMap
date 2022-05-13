@@ -38,7 +38,7 @@ public extension TextureMap {
     static func texture(raw: UnsafeMutablePointer<UInt8>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
         let bytesPerRow: Int = Int(resolution.width) * 4
         let capacity: Int = bytesPerRow * Int(resolution.height)
-        let texture = try emptyTexture(resolution: resolution, bits: ._8)
+        let texture: MTLTexture = try .empty(resolution: resolution, bits: ._8)
         let region = MTLRegion(origin: MTLOrigin(x: 0, y: 0, z: 0),
                                size: MTLSize(width: Int(resolution.width),
                                              height: Int(resolution.height),
