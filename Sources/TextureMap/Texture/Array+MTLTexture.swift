@@ -24,6 +24,8 @@ enum TMTextureArrayError: LocalizedError {
     
     case empty
     case differentResolutions
+    case differentBits
+    case differentPixelFormat
     case makeCommandQueueFailed
     case makeCommandBufferFailed
     case makeBlitCommandEncoderFailed
@@ -35,6 +37,10 @@ enum TMTextureArrayError: LocalizedError {
             return "Texture Map - Texture Array - Empty"
         case .differentResolutions:
             return "Texture Map - Texture Array - Different Resolutions"
+        case .differentBits:
+            return "Texture Map - Texture Array - Different Bits"
+        case .differentPixelFormat:
+            return "Texture Map - Texture Array - Different Pixel Format"
         case .makeCommandQueueFailed:
             return "Texture Map - Texture Array - Make Command Queue Failed"
         case .makeCommandBufferFailed:
@@ -61,6 +67,20 @@ public extension Array where Element == MTLTexture {
             texture.width == width && texture.height == height
         }).count == count else {
             throw TMTextureArrayError.differentResolutions
+        }
+        
+        let depth = first!.depth
+        guard filter({ texture -> Bool in
+            texture.depth == depth
+        }).count == count else {
+            throw TMTextureArrayError.differentBits
+        }
+        
+        let pixelFormat = first!.pixelFormat
+        guard filter({ texture -> Bool in
+            texture.pixelFormat == pixelFormat
+        }).count == count else {
+            throw TMTextureArrayError.differentPixelFormat
         }
         
         let descriptor = MTLTextureDescriptor()
