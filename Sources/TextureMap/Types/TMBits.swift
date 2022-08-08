@@ -9,6 +9,7 @@ public enum TMBits: Int, Codable, CaseIterable {
   
     case _8 = 8
     case _16 = 16
+    case _32 = 32
     
 }
 
@@ -22,6 +23,7 @@ public extension TMBits {
         switch self {
         case ._8: return swapRedAndBlue ? .bgra8Unorm : .rgba8Unorm
         case ._16: return .rgba16Float
+        case ._32: return .rgba32Float
         }
     }
     
@@ -29,13 +31,15 @@ public extension TMBits {
         switch self {
         case ._8: return .RGBA8
         case ._16: return .RGBAh
+        case ._32: return .RGBAf
         }
     }
     
     var osType: OSType {
         switch self {
         case ._8: return kCVPixelFormatType_32BGRA
-        case ._16: return kCVPixelFormatType_128RGBAFloat
+        case ._16: return kCVPixelFormatType_64RGBAHalf
+        case ._32: return kCVPixelFormatType_128RGBAFloat
         }
     }
     

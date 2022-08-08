@@ -5,7 +5,7 @@
 import Metal
 import CoreGraphics
 
-enum TMSampleError: LocalizedError {
+enum TMTextureSampleError: LocalizedError {
     
     case indexOutOfBounds
     case makeCommandQueueFailed
@@ -42,22 +42,22 @@ public extension MTLTexture {
         }()
         
         guard index >= 0 && index < length else {
-            throw TMSampleError.indexOutOfBounds
+            throw TMTextureSampleError.indexOutOfBounds
         }
                 
         let resolution: CGSize = CGSize(width: axis == .x ? depth : width,
                                         height: axis == .y ? depth : height)
         
         guard let commandQueue: MTLCommandQueue = TextureMap.metalDevice.makeCommandQueue() else {
-            throw TMSampleError.makeCommandQueueFailed
+            throw TMTextureSampleError.makeCommandQueueFailed
         }
         
         guard let commandBuffer = commandQueue.makeCommandBuffer() else {
-            throw TMSampleError.makeCommandBufferFailed
+            throw TMTextureSampleError.makeCommandBufferFailed
         }
         
         guard let blitEncoder = commandBuffer.makeBlitCommandEncoder() else {
-            throw TMSampleError.makeBlitCommandEncoderFailed
+            throw TMTextureSampleError.makeBlitCommandEncoderFailed
         }
         
         let targetTexture: MTLTexture = try await .empty(resolution: resolution, bits: bits)

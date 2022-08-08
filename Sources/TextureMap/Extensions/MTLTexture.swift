@@ -98,15 +98,17 @@ extension MTLTexture where Self == MTLTexture {
         }
     }
     
-    public static func empty(resolution: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
+    public static func empty(resolution: CGSize, bits: TMBits, sampleCount: Int = 1, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
         
         guard resolution.width > 0 && resolution.height > 0 else {
             throw TMError.resolutionZero
         }
         
-        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: bits.metalPixelFormat(swapRedAndBlue: swapRedAndBlue), width: Int(resolution.width), height: Int(resolution.height), mipmapped: true)
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: bits.metalPixelFormat(swapRedAndBlue: swapRedAndBlue), width: Int(resolution.width), height: Int(resolution.height), mipmapped: sampleCount == 1)
         
         descriptor.usage = usage.textureUsage
+        descriptor.textureType = sampleCount > 1 ? .type2DMultisample : .type2D
+        descriptor.sampleCount = sampleCount
         
         guard let texture = TextureMap.metalDevice.makeTexture(descriptor: descriptor) else {
             throw TMError.makeTextureFailed

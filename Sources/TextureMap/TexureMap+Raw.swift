@@ -199,13 +199,11 @@ public extension TextureMap {
     }
     #endif
     
-//    #endif
-    
     static func raw32(texture: MTLTexture) throws -> [Float] {
-//        let bits = try TMBits(texture: texture)
-//        guard bits == ._32 else {
-//            throw TMRawError.unsupportedBits(bits)
-//        }
+        let bits = try TMBits(texture: texture)
+        guard bits == ._32 else {
+            throw TMRawError.unsupportedBits(bits)
+        }
         let region = MTLRegionMake2D(0, 0, texture.width, texture.height)
         var raw = Array<Float>(repeating: -1.0, count: texture.width * texture.height * 4)
         raw.withUnsafeMutableBytes {
@@ -216,10 +214,10 @@ public extension TextureMap {
     }
     
     static func raw3d32(texture: MTLTexture) throws -> [Float] {
-//        let bits = try TMBits(texture: texture)
-//        guard bits == ._32 else {
-//            throw TMRawError.unsupportedBits(bits)
-//        }
+        let bits = try TMBits(texture: texture)
+        guard bits == ._32 else {
+            throw TMRawError.unsupportedBits(bits)
+        }
         let region = MTLRegionMake3D(0, 0, 0, texture.width, texture.height, texture.depth)
         var raw = Array<Float>(repeating: -1.0, count: texture.width * texture.height * texture.depth * 4)
         raw.withUnsafeMutableBytes {
@@ -269,8 +267,8 @@ public extension TextureMap {
             #else
             throw TMRawError.unsupportedOS
             #endif
-//        case ._32:
-//            raw = try raw32(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
+        case ._32:
+            raw = try raw32(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
         }
         return raw
     }
@@ -327,8 +325,8 @@ public extension TextureMap {
             #else
             throw TMRawError.unsupportedOS
             #endif
-//        case ._32:
-//            raw = try raw3d32(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
+        case ._32:
+            raw = try raw3d32(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
         }
         return raw
     }
