@@ -66,6 +66,20 @@ public extension TMColorSpace {
     }
 }
 
+// MARK: - Monochrome
+
+public extension TMColorSpace {
+    
+    var isMonochrome: Bool {
+        switch self {
+        case .sRGB, .displayP3:
+            return false
+        case .custom(let cgColorSpace):
+            return cgColorSpace.model == .monochrome
+        }
+    }
+}
+
 // MARK: - Life Cycle
 
 public extension TMColorSpace {
