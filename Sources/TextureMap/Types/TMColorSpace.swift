@@ -64,6 +64,14 @@ public extension TMColorSpace {
             return cgColorSpace
         }
     }
+    
+    var coloredCGColorSpace: CGColorSpace {
+        if isMonochrome {
+            return CGColorSpace(name: CGColorSpace.sRGB)!
+        } else {
+            return cgColorSpace
+        }
+    }
 }
 
 // MARK: - Monochrome
@@ -100,7 +108,7 @@ public extension TMColorSpace {
             self = .sRGB
             return
         } else {
-            self = .sRGB//custom(cgColorSpace)
+            self = .custom(cgColorSpace) // .sRGB
             return
         }
         

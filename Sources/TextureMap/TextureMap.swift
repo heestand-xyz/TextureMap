@@ -92,7 +92,7 @@ public extension TextureMap {
                 
         let ciImage: CIImage = try ciImage(texture: texture, colorSpace: colorSpace)
         
-        let cgImage: CGImage = try cgImage(ciImage: ciImage, bits: bits)
+        let cgImage: CGImage = try cgImage(ciImage: ciImage, colorSpace: colorSpace, bits: bits)
 
         return try image(cgImage: cgImage)
     }
@@ -165,7 +165,7 @@ public extension TextureMap {
         
         let bits: TMBits = try bits ?? TMBits(ciImage: ciImage)
      
-        guard let cgColorSpace: CGColorSpace = colorSpace?.cgColorSpace ?? ciImage.colorSpace else {
+        guard let cgColorSpace: CGColorSpace = colorSpace?.coloredCGColorSpace ?? ciImage.colorSpace else {
             throw TMError.ciImageColorSpaceNotFound
         }
         
