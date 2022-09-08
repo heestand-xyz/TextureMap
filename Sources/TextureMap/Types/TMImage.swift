@@ -5,6 +5,9 @@
 
 import Foundation
 import SwiftUI
+#if !os(macOS)
+import MobileCoreServices
+#endif
 
 #if os(macOS)
 public typealias TMImage = NSImage
@@ -104,6 +107,26 @@ public extension NSImage {
         guard let representation = tiffRepresentation else { return nil }
         guard let bitmap = NSBitmapImageRep(data: representation) else { return nil }
         return bitmap.representation(using: .jpeg, properties: [.compressionFactor: compressionQuality])
+    }
+    func tiffData() -> Data? {
+        tiffRepresentation
+    }
+}
+#else
+public extension UIImage {
+    func tiffData() -> Data? {
+        guard let cgImage
+        else { return nil }
+        let options: NSDictionary =     [
+            kCGImagePropertyOrientation: imageOrientation,
+            kCGImagePropertyHasAlpha: true
+        ]
+        let data = NSMutableData()
+        guard let imageDestination = CGImageDestinationCreateWithData(data as CFMutableData, kUTTypeTIFF, 1, nil)
+        else { return nil }
+        CGImageDestinationAddImage(imageDestination, cgImage, options)
+        CGImageDestinationFinalize(imageDestination)
+        return data as Data
     }
 }
 #endif
