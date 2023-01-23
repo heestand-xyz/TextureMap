@@ -3,6 +3,7 @@
 //
 
 import Foundation
+import VideoToolbox
 import MetalKit
 
 public struct TextureMap {
@@ -18,6 +19,21 @@ public struct TextureMap {
 // MARK: Texture
 
 public extension TextureMap {
+    
+    enum TextureError: LocalizedError {
+        
+        case vtCreateCGImageFromCVPixelBufferFailed
+        case cmSampleBufferGetImageBufferFailed
+        
+        public var errorDescription: String? {
+            switch self {
+            case .vtCreateCGImageFromCVPixelBufferFailed:
+                return "TextureMap - Texture - VT Create CGImage from CVPixelBuffer Failed"
+            case .cmSampleBufferGetImageBufferFailed:
+                return "TextureMap - Texture - CMSampleBuffer Get Image Buffer Failed"
+            }
+        }
+    }
     
     static func texture(image: TMImage) throws -> MTLTexture {
 
@@ -58,6 +74,21 @@ public extension TextureMap {
         return texture
     }
     #endif
+    
+    static func texture(sampleBuffer: CMSampleBuffer) throws -> MTLTexture {
+        guard let pixelBuffer: CVPixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
+        else { throw TextureError.cmSampleBufferGetImageBufferFailed }
+        return try texture(pixelBuffer: pixelBuffer)
+    }
+    
+    static func texture(pixelBuffer: CVPixelBuffer) throws -> MTLTexture {
+        var cgImage: CGImage!
+        VTCreateCGImageFromCVPixelBuffer(pixelBuffer, options: nil, imageOut: &cgImage)
+        if cgImage == nil {
+            throw TextureError.vtCreateCGImageFromCVPixelBufferFailed
+        }
+        return try texture(cgImage: cgImage)
+    }
 }
 
 // MARK: Image
