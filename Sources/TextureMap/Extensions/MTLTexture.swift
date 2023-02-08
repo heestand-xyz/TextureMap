@@ -100,7 +100,7 @@ extension MTLTexture where Self == MTLTexture {
     
     public static func empty(resolution: CGSize, bits: TMBits, sampleCount: Int = 1, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
         
-        guard resolution.width > 0 && resolution.height > 0 else {
+        guard resolution.width >= 1 && resolution.height >= 1 else {
             throw TMError.resolutionZero
         }
         
