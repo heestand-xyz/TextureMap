@@ -307,3 +307,46 @@ extension TextureMap {
         return pixelBuffer
     }
 }
+
+// MARK: CMSampleBuffer
+
+
+extension TextureMap {
+    
+    enum SampleBufferError: LocalizedError {
+        
+        case failedToCreateSampleBuffer(OSStatus)
+        
+        var errorDescription: String? {
+            switch self {
+            case .failedToCreateSampleBuffer(let osStatus):
+                return "TextureMap - Sample Buffer - Failed to Create (OSStatus: \(osStatus))"
+            }
+        }
+    }
+    
+    public static func sampleBuffer(texture: MTLTexture, colorSpace: TMColorSpace) throws -> CMSampleBuffer {
+        
+        let pixelBuffer: CVPixelBuffer = try pixelBuffer(texture: texture, colorSpace: colorSpace)
+        
+        var sampleBuffer: CMSampleBuffer?
+        
+        var timingInfo = CMSampleTimingInfo()
+        var formatDescription: CMFormatDescription? = nil
+        CMVideoFormatDescriptionCreateForImageBuffer(allocator: kCFAllocatorDefault, imageBuffer: pixelBuffer, formatDescriptionOut: &formatDescription)
+        
+        let osStatus: OSStatus = CMSampleBufferCreateReadyWithImageBuffer(
+          allocator: kCFAllocatorDefault,
+          imageBuffer: pixelBuffer,
+          formatDescription: formatDescription!,
+          sampleTiming: &timingInfo,
+          sampleBufferOut: &sampleBuffer
+        )
+        
+        guard let sampleBuffer else {
+            throw SampleBufferError.failedToCreateSampleBuffer(osStatus)
+        }
+        
+        return sampleBuffer
+    }
+}
