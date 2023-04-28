@@ -10,15 +10,18 @@ public extension TextureMap {
     
     enum TMRawError: LocalizedError {
         
+        case badResolution
         case unsupportedBits(TMBits)
         case unsupportedOS
         case unsupportedOSVersion
         case failedToMakeCommandBuffer
         case failedToMakeBuffer
         case failedToMakeCommandEncoder
-
+        
         public var errorDescription: String? {
             switch self {
+            case .badResolution:
+                return "Texture Map - Raw - Bad Resolution"
             case .unsupportedBits(let bits):
                 return "Texture Map - Raw - Unsupported Bits (\(bits.rawValue))"
             case .unsupportedOS:
@@ -34,8 +37,27 @@ public extension TextureMap {
             }
         }
     }
+}
+
+// MARK: - Raw to Texture
+
+public extension TextureMap {
+    
+    static func texture(channels: [UInt8], resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
+        let count: Int = channels.count
+        guard count == Int(resolution.width) * Int(resolution.height) * 4 else {
+            throw TMRawError.badResolution
+        }
+        var channels: [UInt8] = channels
+        let pointer = UnsafeMutablePointer<UInt8>.allocate(capacity: count)
+        pointer.initialize(from: &channels, count: count)
+        return try texture(raw: pointer, resolution: resolution, on: device)
+    }
     
     static func texture(raw: UnsafeMutablePointer<UInt8>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
+        guard resolution.width > 0 && resolution.height > 0 else {
+            throw TMRawError.badResolution
+        }
         let bytesPerRow: Int = Int(resolution.width) * 4
         let capacity: Int = bytesPerRow * Int(resolution.height)
         let texture: MTLTexture = try .empty(resolution: resolution, bits: ._8)
@@ -49,10 +71,21 @@ public extension TextureMap {
         return texture
     }
     
-    #if !os(macOS) && !targetEnvironment(macCatalyst) // Until macOS has Float16 support
+    @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
+    static func texture(channels: [Float16], resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
+        let count: Int = channels.count
+        guard count == Int(resolution.width) * Int(resolution.height) * 4 else {
+            throw TMRawError.badResolution
+        }
+        var channels: [Float16] = channels
+        let pointer = UnsafeMutablePointer<Float16>.allocate(capacity: count)
+        pointer.initialize(from: &channels, count: count)
+        return try texture(raw: pointer, resolution: resolution, on: device)
+    }
+    
     @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
     static func texture(raw: UnsafeMutablePointer<Float16>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
-        let bytesPerRow: Int = Int(resolution.width) * 4
+        let bytesPerRow: Int = Int(resolution.width) * 4 * 2
         let capacity: Int = bytesPerRow * Int(resolution.height)
         let texture: MTLTexture = try .empty(resolution: resolution, bits: ._16)
         let region = MTLRegion(origin: MTLOrigin(x: 0, y: 0, z: 0),
@@ -64,7 +97,36 @@ public extension TextureMap {
         }
         return texture
     }
-    #endif
+    
+    static func texture(channels: [Float], resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
+        let count: Int = channels.count
+        guard count == Int(resolution.width) * Int(resolution.height) * 4 else {
+            throw TMRawError.badResolution
+        }
+        var channels: [Float] = channels
+        let pointer = UnsafeMutablePointer<Float>.allocate(capacity: count)
+        pointer.initialize(from: &channels, count: count)
+        return try texture(raw: pointer, resolution: resolution, on: device)
+    }
+    
+    static func texture(raw: UnsafeMutablePointer<Float>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
+        let bytesPerRow: Int = Int(resolution.width) * 4 * 4
+        let capacity: Int = bytesPerRow * Int(resolution.height)
+        let texture: MTLTexture = try .empty(resolution: resolution, bits: ._32)
+        let region = MTLRegion(origin: MTLOrigin(x: 0, y: 0, z: 0),
+                               size: MTLSize(width: Int(resolution.width),
+                                             height: Int(resolution.height),
+                                             depth: 1))
+        raw.withMemoryRebound(to: Float.self, capacity: capacity) { rawPointer in
+            texture.replace(region: region, mipmapLevel: 0, withBytes: rawPointer, bytesPerRow: bytesPerRow)
+        }
+        return texture
+    }
+}
+
+// MARK: - Texture to Raw
+
+public extension TextureMap {
     
     static func raw8(texture: MTLTexture) throws -> [UInt8] {
         let bits = try TMBits(texture: texture)
@@ -164,7 +226,6 @@ public extension TextureMap {
         return raw
     }
     
-    #if !os(macOS) && !targetEnvironment(macCatalyst) // Until macOS has Float16 support
     @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
     static func raw16(texture: MTLTexture) throws -> [Float16] {
         let bits = try TMBits(texture: texture)
@@ -179,9 +240,7 @@ public extension TextureMap {
         }
         return raw
     }
-    #endif
-    
-    #if !os(macOS) && !targetEnvironment(macCatalyst) // Until macOS has Float16 support
+
     @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
     static func raw3d16(texture: MTLTexture) throws -> [Float16] {
         let bits = try TMBits(texture: texture)
@@ -197,7 +256,6 @@ public extension TextureMap {
         }
         return raw
     }
-    #endif
     
     static func raw32(texture: MTLTexture) throws -> [Float] {
         let bits = try TMBits(texture: texture)
@@ -258,15 +316,11 @@ public extension TextureMap {
         case ._8:
             raw = try raw8(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) / (pow(2, 8) - 1) })
         case ._16:
-            #if !os(macOS) && !targetEnvironment(macCatalyst) // Until macOS has Float16 support
             if #available(iOS 14.0, tvOS 14.0, macOS 11.0, *) {
                 raw = try raw16(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
             } else {
                 throw TMRawError.unsupportedOSVersion
             }
-            #else
-            throw TMRawError.unsupportedOS
-            #endif
         case ._32:
             raw = try raw32(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
         }
@@ -316,15 +370,11 @@ public extension TextureMap {
         case ._8:
             raw = try raw3d8(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) / (pow(2, 8) - 1) })
         case ._16:
-            #if !os(macOS) && !targetEnvironment(macCatalyst) // Until macOS has Float16 support
             if #available(iOS 14.0, tvOS 14.0, macOS 11.0, *) {
                 raw = try raw3d16(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
             } else {
                 throw TMRawError.unsupportedOSVersion
             }
-            #else
-            throw TMRawError.unsupportedOS
-            #endif
         case ._32:
             raw = try raw3d32(texture: texture).map({ chan -> CGFloat in return CGFloat(chan) })
         }
