@@ -162,6 +162,10 @@ public extension TextureMap {
         
         return ciImage
     }
+
+    static func ciImage(cgImage: CGImage) -> CIImage {
+        CIImage(cgImage: cgImage)
+    }
     
     static func ciImage(image: TMImage) throws -> CIImage {
         #if os(macOS)
