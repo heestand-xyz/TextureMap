@@ -22,11 +22,14 @@ public extension TextureMap {
     
     enum TextureError: LocalizedError {
         
+        case noImageDataFound
         case vtCreateCGImageFromCVPixelBufferFailed
         case cmSampleBufferGetImageBufferFailed
         
         public var errorDescription: String? {
             switch self {
+            case .noImageDataFound:
+                return "TextureMap - Texture - No Image Data Found"
             case .vtCreateCGImageFromCVPixelBufferFailed:
                 return "TextureMap - Texture - VT Create CGImage from CVPixelBuffer Failed"
             case .cmSampleBufferGetImageBufferFailed:
@@ -37,9 +40,15 @@ public extension TextureMap {
     
     static func texture(image: TMImage) throws -> MTLTexture {
 
-        let cgImage: CGImage = try cgImage(image: image)
-
-        return try texture(cgImage: cgImage)
+        guard let data = image.tiffData() else {
+            throw TextureError.noImageDataFound
+        }
+        
+        let loader = MTKTextureLoader(device: metalDevice)
+        
+        let texture: MTLTexture = try loader.newTexture(data: data, options: nil)
+        
+        return texture
     }
     
     static func texture(cgImage: CGImage) throws -> MTLTexture {
