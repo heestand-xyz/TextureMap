@@ -54,7 +54,7 @@ public extension TextureMap {
         return try texture(raw: pointer, resolution: resolution, on: device)
     }
     
-    static func texture(raw: UnsafeMutablePointer<UInt8>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
+    static func texture(raw: UnsafePointer<UInt8>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
         guard resolution.width > 0 && resolution.height > 0 else {
             throw TMRawError.badResolution
         }
@@ -86,7 +86,7 @@ public extension TextureMap {
     }
     
     @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
-    static func texture(raw: UnsafeMutablePointer<Float16>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
+    static func texture(raw: UnsafePointer<Float16>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
         let bytesPerRow: Int = Int(resolution.width) * 4 * 2
         let capacity: Int = bytesPerRow * Int(resolution.height)
         let texture: MTLTexture = try .empty(resolution: resolution, bits: ._16)
@@ -114,7 +114,7 @@ public extension TextureMap {
         return try texture(raw: pointer, resolution: resolution, on: device)
     }
     
-    static func texture(raw: UnsafeMutablePointer<Float>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
+    static func texture(raw: UnsafePointer<Float>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
         let bytesPerRow: Int = Int(resolution.width) * 4 * 4
         let capacity: Int = bytesPerRow * Int(resolution.height)
         let texture: MTLTexture = try .empty(resolution: resolution, bits: ._32)
