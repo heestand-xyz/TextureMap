@@ -228,7 +228,8 @@ public extension TextureMap {
         options[.colorSpace] = colorSpace.cgColorSpace
         if colorSpace == .xdr {
             if #available(iOS 17.0, macOS 14.0, *) {
-                options[.expandToHDR] = true
+                // TODO: Enable when Xcode Cloud has macOS 14
+//                options[.expandToHDR] = true
                 options[.colorSpace] = TMColorSpace.sRGB.cgColorSpace
             }
         }
@@ -274,17 +275,18 @@ public extension TextureMap {
     }
     
     static func readImage(from url: URL, xdr: Bool = false) throws -> CIImage {
-        if #available(iOS 17.0, macOS 14.0, *) {
-            guard let ciImage = CIImage(contentsOf: url, options: [.expandToHDR: xdr]) else {
-                throw TextureError.failedToReadCIImageFromURL
-            }
-            return ciImage
-        } else {
+        // TODO: Enable when Xcode Cloud has macOS 14
+//        if #available(iOS 17.0, macOS 14.0, *) {
+//            guard let ciImage = CIImage(contentsOf: url, options: [.expandToHDR: xdr]) else {
+//                throw TextureError.failedToReadCIImageFromURL
+//            }
+//            return ciImage
+//        } else {
             guard let ciImage = CIImage(contentsOf: url) else {
                 throw TextureError.failedToReadCIImageFromURL
             }
             return ciImage
-        }
+//        }
     }
 }
 
