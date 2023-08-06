@@ -25,6 +25,7 @@ public extension TextureMap {
         case noImageDataFound
         case vtCreateCGImageFromCVPixelBufferFailed
         case cmSampleBufferGetImageBufferFailed
+        case failedToReadCIImageFromURL
         
         public var errorDescription: String? {
             switch self {
@@ -34,6 +35,8 @@ public extension TextureMap {
                 return "TextureMap - Texture - VT Create CGImage from CVPixelBuffer Failed"
             case .cmSampleBufferGetImageBufferFailed:
                 return "TextureMap - Texture - CMSampleBuffer Get Image Buffer Failed"
+            case .failedToReadCIImageFromURL:
+                return "TextureMap - Failed to Read CIImage from URL"
             }
         }
     }
@@ -131,7 +134,7 @@ public extension TextureMap {
     private static func image(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) throws -> TMImage {
                 
         let ciImage: CIImage = try ciImage(texture: texture, colorSpace: colorSpace)
-        
+
         let cgImage: CGImage = try cgImage(ciImage: ciImage, colorSpace: colorSpace, bits: bits)
 
         return try image(cgImage: cgImage)
@@ -155,6 +158,64 @@ public extension TextureMap {
         return UIImage(ciImage: ciImage)
         #endif
     }
+    
+    static func write(image: TMImage, to url: URL, bits: TMBits, colorSpace: TMColorSpace) async throws {
+
+        try await withCheckedThrowingContinuation { continuation in
+            
+            DispatchQueue.global(qos: .userInteractive).async {
+                
+                do {
+                    
+                    try write(image: image, to: url, bits: bits, colorSpace: colorSpace)
+                    
+                    DispatchQueue.main.async {
+                        continuation.resume()
+                    }
+                    
+                } catch {
+                    
+                    DispatchQueue.main.async {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+        }
+    }
+    
+    static func write(image: TMImage, to url: URL, bits: TMBits, colorSpace: TMColorSpace) throws {
+        let ciImage: CIImage = try ciImage(image: image)
+        try write(ciImage: ciImage, to: url, bits: bits, colorSpace: colorSpace)
+    }
+    
+    static func readImage(from url: URL, xdr: Bool = false) async throws -> TMImage {
+
+        try await withCheckedThrowingContinuation { continuation in
+            
+            DispatchQueue.global(qos: .userInteractive).async {
+                
+                do {
+                    
+                    let image: TMImage = try readImage(from: url, xdr: xdr)
+                    
+                    DispatchQueue.main.async {
+                        continuation.resume(returning: image)
+                    }
+                    
+                } catch {
+                    
+                    DispatchQueue.main.async {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+        }
+    }
+    
+    static func readImage(from url: URL, xdr: Bool = false) throws -> TMImage {
+        let ciImage: CIImage = try readImage(from: url, xdr: xdr)
+        return try image(ciImage: ciImage)
+    }
 }
 
 // MARK: CIImage
@@ -163,9 +224,16 @@ public extension TextureMap {
     
     static func ciImage(texture: MTLTexture, colorSpace: TMColorSpace) throws -> CIImage {
         
-        guard let ciImage = CIImage(mtlTexture: texture, options: [
-            .colorSpace: colorSpace.cgColorSpace
-        ]) else {
+        var options: [CIImageOption : Any] = [:]
+        options[.colorSpace] = colorSpace.cgColorSpace
+        if colorSpace == .xdr {
+            if #available(iOS 17.0, macOS 14.0, *) {
+                options[.expandToHDR] = true
+                options[.colorSpace] = TMColorSpace.sRGB.cgColorSpace
+            }
+        }
+        
+        guard let ciImage = CIImage(mtlTexture: texture, options: options) else {
             throw TMError.createCIImageFailed
         }
         
@@ -192,6 +260,32 @@ public extension TextureMap {
         return ciImage
         #endif
     }
+    
+    static func write(ciImage: CIImage, to url: URL, bits: TMBits, colorSpace: TMColorSpace) throws {
+        
+        let context = CIContext(options: nil)
+        
+        try context.writePNGRepresentation(
+            of: ciImage,
+            to: url,
+            format: bits.ciFormat,
+            colorSpace: colorSpace.cgColorSpace,
+            options: [:])
+    }
+    
+    static func readImage(from url: URL, xdr: Bool = false) throws -> CIImage {
+        if #available(iOS 17.0, macOS 14.0, *) {
+            guard let ciImage = CIImage(contentsOf: url, options: [.expandToHDR: xdr]) else {
+                throw TextureError.failedToReadCIImageFromURL
+            }
+            return ciImage
+        } else {
+            guard let ciImage = CIImage(contentsOf: url) else {
+                throw TextureError.failedToReadCIImageFromURL
+            }
+            return ciImage
+        }
+    }
 }
 
 // MARK: CGImage
@@ -205,7 +299,7 @@ public extension TextureMap {
         return try cgImage(ciImage: ciImage, colorSpace: colorSpace, bits: bits)
     }
     
-    static func cgImage(ciImage: CIImage, colorSpace: TMColorSpace? = nil, bits: TMBits? = nil) throws -> CGImage {
+    static func cgImage(ciImage: CIImage, colorSpace: TMColorSpace? = nil, bits: TMBits? = nil, xdr: Bool = false) throws -> CGImage {
         
         let bits: TMBits = try bits ?? TMBits(ciImage: ciImage)
      

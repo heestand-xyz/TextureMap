@@ -5,12 +5,15 @@
 import Foundation
 import MetalKit
 
-public enum TMBits: Int, Codable, CaseIterable {
+public enum TMBits: Int, Codable, CaseIterable, Comparable {
   
     case _8 = 8
     case _16 = 16
     case _32 = 32
     
+    public static func < (lhs: TMBits, rhs: TMBits) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
 }
 
 // MARK: Format

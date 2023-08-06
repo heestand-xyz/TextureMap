@@ -12,6 +12,7 @@ import AppKit
 public enum TMColorSpace: Equatable /*, String, Codable, CaseIterable*/ {
     case sRGB
     case displayP3
+    case xdr
     case custom(CGColorSpace)
 }
 
@@ -24,6 +25,8 @@ extension TMColorSpace: CustomStringConvertible {
             return "sRGB"
         case .displayP3:
             return "Display P3"
+        case .xdr:
+            return "XDR"
         case .custom(let cgColorSpace):
             return "Custom: \(cgColorSpace)"
         }
@@ -44,6 +47,12 @@ extension TMColorSpace {
             } else {
                 return CGColorSpace(name: CGColorSpace.displayP3)!
             }
+        case .xdr:
+            if #available(iOS 14.0, macOS 11.0, *) {
+                return CGColorSpace(name: CGColorSpace.itur_2100_PQ)! // HLG
+            } else {
+                return CGColorSpace(name: CGColorSpace.linearSRGB)!
+            }
         case .custom(let cgColorSpace):
             return cgColorSpace
         }
@@ -60,6 +69,12 @@ public extension TMColorSpace {
             return CGColorSpace(name: CGColorSpace.sRGB)!
         case .displayP3:
             return CGColorSpace(name: CGColorSpace.displayP3)!
+        case .xdr:
+            if #available(iOS 14.0, macOS 11.0, *) {
+                return CGColorSpace(name: CGColorSpace.itur_2100_PQ)! // HLG
+            } else {
+                return CGColorSpace(name: CGColorSpace.sRGB)!
+            }
         case .custom(let cgColorSpace):
             return cgColorSpace
         }
@@ -80,7 +95,7 @@ public extension TMColorSpace {
     
     var isMonochrome: Bool {
         switch self {
-        case .sRGB, .displayP3:
+        case .sRGB, .displayP3, .xdr:
             return false
         case .custom(let cgColorSpace):
             return cgColorSpace.model == .monochrome
@@ -108,6 +123,13 @@ public extension TMColorSpace {
             self = .sRGB
             return
         } else {
+            if #available(iOS 14.0, macOS 11.0, *) {
+                if cgColorSpace == CGColorSpace(name: CGColorSpace.itur_2100_PQ)! ||
+                    cgColorSpace == CGColorSpace(name: CGColorSpace.itur_2100_HLG)! {
+                    self = .xdr
+                    return
+                }
+            }
             self = .custom(cgColorSpace) // .sRGB
             return
         }
