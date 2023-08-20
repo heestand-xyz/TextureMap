@@ -123,7 +123,7 @@ public extension UIImage {
             kCGImagePropertyHasAlpha: true
         ]
         let data = NSMutableData()
-        guard let imageDestination = CGImageDestinationCreateWithData(data as CFMutableData, UTType.tiff.identifier as CFString, 1, nil)
+        guard let imageDestination = CGImageDestinationCreateWithData(data as CFMutableData, kUTTypeTIFF /*UTType.tiff.identifier as CFString*/, 1, nil)
         else { return nil }
         CGImageDestinationAddImage(imageDestination, cgImage, options)
         CGImageDestinationFinalize(imageDestination)
