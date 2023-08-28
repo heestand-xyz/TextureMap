@@ -73,8 +73,7 @@ public extension TMImage {
 
             try await withCheckedThrowingContinuation { continuation in
                 
-//                DispatchQueue.global(qos: .background).async {
-                DispatchQueue.main.async {
+                DispatchQueue.global(qos: .background).async {
 
                     do {
 

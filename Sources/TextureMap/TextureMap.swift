@@ -26,6 +26,7 @@ public extension TextureMap {
         case vtCreateCGImageFromCVPixelBufferFailed
         case cmSampleBufferGetImageBufferFailed
         case failedToReadCIImageFromURL
+        case imageToTextureConversionFailed
         
         public var errorDescription: String? {
             switch self {
@@ -37,6 +38,8 @@ public extension TextureMap {
                 return "TextureMap - Texture - CMSampleBuffer Get Image Buffer Failed"
             case .failedToReadCIImageFromURL:
                 return "TextureMap - Failed to Read CIImage from URL"
+            case .imageToTextureConversionFailed:
+                return "TextureMap - Image to Texture Conversion Failed"
             }
         }
     }
@@ -47,11 +50,32 @@ public extension TextureMap {
             throw TextureError.noImageDataFound
         }
         
-        let loader = MTKTextureLoader(device: metalDevice)
-        
-        let texture: MTLTexture = try loader.newTexture(data: data, options: nil)
-        
-        return texture
+        do {
+            let loader = MTKTextureLoader(device: metalDevice)
+            let texture: MTLTexture = try loader.newTexture(data: data, options: nil)
+            return texture
+        } catch {
+            print("TextureMap - Texture Conversion Failed - Reverting to Backup Method")
+            let bits = try TMBits(image: image)
+            let colorSpace = try TMColorSpace(image: image)
+            let ciImage: CIImage = try ciImage(image: image)
+            let width = Int(ciImage.extent.width)
+            let height = Int(ciImage.extent.height)
+            let bounds = CGRect(x: 0, y: 0, width: width, height: height)
+            let ciContext = CIContext(mtlDevice: metalDevice)
+            let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+                pixelFormat: bits.metalPixelFormat(),
+                width: width,
+                height: height,
+                mipmapped: false
+            )
+            textureDescriptor.usage = [.shaderRead, .shaderWrite]
+            guard let texture = metalDevice.makeTexture(descriptor: textureDescriptor) else {
+                throw TextureError.imageToTextureConversionFailed
+            }
+            ciContext.render(ciImage, to: texture, commandBuffer: nil, bounds: bounds, colorSpace: colorSpace.cgColorSpace)
+            return texture
+        }
     }
     
     static func texture(cgImage: CGImage) throws -> MTLTexture {
