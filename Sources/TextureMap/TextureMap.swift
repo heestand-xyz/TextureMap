@@ -26,6 +26,9 @@ public extension TextureMap {
         case vtCreateCGImageFromCVPixelBufferFailed
         case cmSampleBufferGetImageBufferFailed
         case failedToReadCIImageFromURL
+        case vcMetalTextureCacheCouldNotBeCreated
+        case cvMetalTextureCacheCreateTextureFromImageFailed
+        case cvMetalTextureGetTextureFailed
         
         public var errorDescription: String? {
             switch self {
@@ -37,6 +40,12 @@ public extension TextureMap {
                 return "TextureMap - Texture - CMSampleBuffer Get Image Buffer Failed"
             case .failedToReadCIImageFromURL:
                 return "TextureMap - Failed to Read CIImage from URL"
+            case .vcMetalTextureCacheCouldNotBeCreated:
+                return "TextureMap - CV Metal Texture Cache Could Not be Created"
+            case .cvMetalTextureCacheCreateTextureFromImageFailed:
+                return "TextureMap - CV Metal Texture Cache Create Texture from Image Failed"
+            case .cvMetalTextureGetTextureFailed:
+                return "TextureMap - CV Metal Texture Get Texture Failed"
             }
         }
     }
@@ -94,12 +103,28 @@ public extension TextureMap {
     }
     
     static func texture(pixelBuffer: CVPixelBuffer) throws -> MTLTexture {
-        var cgImage: CGImage!
-        VTCreateCGImageFromCVPixelBuffer(pixelBuffer, options: nil, imageOut: &cgImage)
-        if cgImage == nil {
-            throw TextureError.vtCreateCGImageFromCVPixelBufferFailed
+        
+        var textureCache: CVMetalTextureCache!
+        CVMetalTextureCacheCreate(nil, nil, metalDevice, nil, &textureCache)
+        if textureCache == nil {
+            throw TextureError.vcMetalTextureCacheCouldNotBeCreated
         }
-        return try texture(cgImage: cgImage)
+
+        var metalTexture: CVMetalTexture!
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        CVMetalTextureCacheCreateTextureFromImage(nil, textureCache, pixelBuffer, nil, .bgra8Unorm, width, height, 0, &metalTexture)
+        if metalTexture == nil {
+            throw TextureError.cvMetalTextureCacheCreateTextureFromImageFailed
+        }
+
+        // Get a Metal texture object from the texture reference.
+        let texture: MTLTexture! = CVMetalTextureGetTexture(metalTexture)
+        if texture == nil {
+            throw TextureError.cvMetalTextureGetTextureFailed
+        }
+        
+        return texture
     }
 }
 
@@ -228,8 +253,7 @@ public extension TextureMap {
         options[.colorSpace] = colorSpace.cgColorSpace
         if colorSpace == .xdr {
             if #available(iOS 17.0, macOS 14.0, *) {
-                // TODO: Enable when Xcode Cloud has macOS 14
-//                options[.expandToHDR] = true
+                options[.expandToHDR] = true
                 options[.colorSpace] = TMColorSpace.sRGB.cgColorSpace
             }
         }
@@ -275,18 +299,15 @@ public extension TextureMap {
     }
     
     static func readImage(from url: URL, xdr: Bool = false) throws -> CIImage {
-        // TODO: Enable when Xcode Cloud has macOS 14
-//        if #available(iOS 17.0, macOS 14.0, *) {
-//            guard let ciImage = CIImage(contentsOf: url, options: [.expandToHDR: xdr]) else {
-//                throw TextureError.failedToReadCIImageFromURL
-//            }
-//            return ciImage
-//        } else {
-            guard let ciImage = CIImage(contentsOf: url) else {
-                throw TextureError.failedToReadCIImageFromURL
-            }
-            return ciImage
-//        }
+        var options: [CIImageOption: Any] = [:]
+        if #available(iOS 17.0, macOS 14.0, *) {
+            options[.expandToHDR] = xdr
+        }
+        guard let ciImage = CIImage(contentsOf: url,
+                                    options: options) else {
+            throw TextureError.failedToReadCIImageFromURL
+        }
+        return ciImage
     }
 }
 
@@ -337,6 +358,15 @@ public extension TextureMap {
         
         return cgImage
         #endif
+    }
+    
+    static func cgImage(pixelBuffer: CVPixelBuffer) throws -> CGImage {
+        var cgImage: CGImage!
+        VTCreateCGImageFromCVPixelBuffer(pixelBuffer, options: nil, imageOut: &cgImage)
+        if cgImage == nil {
+            throw TextureError.vtCreateCGImageFromCVPixelBufferFailed
+        }
+        return cgImage
     }
 }
 
