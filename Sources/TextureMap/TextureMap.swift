@@ -72,9 +72,9 @@ public extension TextureMap {
         return texture
     }
     
-    static func texture(ciImage: CIImage) throws -> MTLTexture {
+    static func texture(ciImage: CIImage, colorSpace: TMColorSpace? = nil, bits: TMBits? = nil) throws -> MTLTexture {
         
-        let cgImage: CGImage = try cgImage(ciImage: ciImage)
+        let cgImage: CGImage = try cgImage(ciImage: ciImage, colorSpace: colorSpace, bits: bits)
         
         return try texture(cgImage: cgImage)
     }
@@ -322,7 +322,7 @@ public extension TextureMap {
         return try cgImage(ciImage: ciImage, colorSpace: colorSpace, bits: bits)
     }
     
-    static func cgImage(ciImage: CIImage, colorSpace: TMColorSpace? = nil, bits: TMBits? = nil, xdr: Bool = false) throws -> CGImage {
+    static func cgImage(ciImage: CIImage, colorSpace: TMColorSpace? = nil, bits: TMBits? = nil) throws -> CGImage {
         
         let bits: TMBits = try bits ?? TMBits(ciImage: ciImage)
      
