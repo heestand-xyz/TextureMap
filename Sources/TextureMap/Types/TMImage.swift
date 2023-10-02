@@ -8,6 +8,7 @@ import SwiftUI
 #if !os(macOS)
 import MobileCoreServices
 #endif
+import UniformTypeIdentifiers
 
 #if os(macOS)
 public typealias TMImage = NSImage
@@ -72,8 +73,7 @@ public extension TMImage {
 
             try await withCheckedThrowingContinuation { continuation in
                 
-//                DispatchQueue.global(qos: .background).async {
-                DispatchQueue.main.async {
+                DispatchQueue.global(qos: .background).async {
 
                     do {
 
@@ -122,7 +122,7 @@ public extension UIImage {
             kCGImagePropertyHasAlpha: true
         ]
         let data = NSMutableData()
-        guard let imageDestination = CGImageDestinationCreateWithData(data as CFMutableData, kUTTypeTIFF, 1, nil)
+        guard let imageDestination = CGImageDestinationCreateWithData(data as CFMutableData, kUTTypeTIFF /*UTType.tiff.identifier as CFString*/, 1, nil)
         else { return nil }
         CGImageDestinationAddImage(imageDestination, cgImage, options)
         CGImageDestinationFinalize(imageDestination)
@@ -148,9 +148,7 @@ public extension NSImage {
         return cgImage(forProposedRect: &frame, context: nil, hints: nil)
     }
 }
-#endif
-
-#if os(iOS)
+#else
 public extension UIImage {
     convenience init(cgImage: CGImage, size: CGSize) {
         self.init(cgImage: cgImage)
