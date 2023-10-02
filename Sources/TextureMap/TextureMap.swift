@@ -113,7 +113,10 @@ public extension TextureMap {
         var metalTexture: CVMetalTexture!
         let width = CVPixelBufferGetWidth(pixelBuffer)
         let height = CVPixelBufferGetHeight(pixelBuffer)
-        CVMetalTextureCacheCreateTextureFromImage(nil, textureCache, pixelBuffer, nil, .bgra8Unorm, width, height, 0, &metalTexture)
+        let osType: OSType = CVPixelBufferGetPixelFormatType(pixelBuffer)
+        let isGrayscale: Bool = osType == OSType(1278226488)
+        let format: MTLPixelFormat = isGrayscale ? .r8Unorm : .bgra8Unorm
+        CVMetalTextureCacheCreateTextureFromImage(nil, textureCache, pixelBuffer, nil, format, width, height, 0, &metalTexture)
         if metalTexture == nil {
             throw TextureError.cvMetalTextureCacheCreateTextureFromImageFailed
         }

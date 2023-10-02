@@ -70,6 +70,8 @@ public extension TMBits {
                 bits = ._8
             } else if metalPixelFormat == .rgba16Unorm {
                 bits = ._16
+            } else if metalPixelFormat == .r8Unorm {
+                bits = ._8
             }
         }
         
