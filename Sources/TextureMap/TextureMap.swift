@@ -159,6 +159,7 @@ public extension TextureMap {
 
 public extension TextureMap {
     
+    @available(*, deprecated, message: "Please use the sync function in a task.")
     static func image(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) async throws -> TMImage {
         
         try await withCheckedThrowingContinuation { continuation in
@@ -204,6 +205,7 @@ public extension TextureMap {
         #endif
     }
     
+    @available(*, deprecated, message: "Please use the sync function in a task.")
     static func write(image: TMImage, to url: URL, bits: TMBits, colorSpace: TMColorSpace) async throws {
 
         try await withCheckedThrowingContinuation { continuation in
@@ -226,6 +228,7 @@ public extension TextureMap {
         try write(ciImage: ciImage, to: url, bits: bits, colorSpace: colorSpace)
     }
     
+    @available(*, deprecated, message: "Please use the sync function in a task.")
     static func readImage(from url: URL, xdr: Bool = false) async throws -> TMImage {
 
         try await withCheckedThrowingContinuation { continuation in

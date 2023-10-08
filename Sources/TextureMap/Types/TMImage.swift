@@ -71,22 +71,6 @@ public extension TMImage {
         get throws {
             try TextureMap.texture(image: self)
         }
-//        get async throws {
-//
-//            try await withCheckedThrowingContinuation { continuation in
-//                
-//                do {
-//                    
-//                    let texture = try TextureMap.texture(image: self)
-//                    
-//                    continuation.resume(returning: texture)
-//                    
-//                } catch {
-//                    
-//                    continuation.resume(throwing: error)
-//                }
-//            }
-//        }
     }
 }
 

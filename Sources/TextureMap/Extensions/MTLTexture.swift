@@ -74,6 +74,7 @@ public enum TextureUsage {
 
 extension MTLTexture where Self == MTLTexture {
     
+    @available(*, deprecated, message: "Please use the sync function in a task.")
     public static func empty(resolution: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) async throws -> MTLTexture {
         
         try await withCheckedThrowingContinuation { continuation in
