@@ -68,31 +68,25 @@ public extension Bundle {
 public extension TMImage {
     
     var texture: MTLTexture {
-        
-        get async throws {
-
-            try await withCheckedThrowingContinuation { continuation in
-                
-                DispatchQueue.global(qos: .background).async {
-
-                    do {
-
-                        let texture = try TextureMap.texture(image: self)
-
-                        DispatchQueue.main.async {
-
-                            continuation.resume(returning: texture)
-                        }
-
-                    } catch {
-
-                        DispatchQueue.main.async {
-                            continuation.resume(throwing: error)
-                        }
-                    }
-                }
-            }
+        get throws {
+            try TextureMap.texture(image: self)
         }
+//        get async throws {
+//
+//            try await withCheckedThrowingContinuation { continuation in
+//                
+//                do {
+//                    
+//                    let texture = try TextureMap.texture(image: self)
+//                    
+//                    continuation.resume(returning: texture)
+//                    
+//                } catch {
+//                    
+//                    continuation.resume(throwing: error)
+//                }
+//            }
+//        }
     }
 }
 

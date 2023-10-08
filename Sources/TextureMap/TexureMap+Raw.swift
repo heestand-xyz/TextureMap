@@ -298,23 +298,16 @@ public extension TextureMap {
     static func rawNormalized(texture: MTLTexture, bits: TMBits) async throws -> [CGFloat] {
         
         try await withCheckedThrowingContinuation { continuation in
-            
-            DispatchQueue.global(qos: .userInteractive).async {
                 
-                do {
-                    
-                    let channels = try rawNormalized(texture: texture, bits: bits)
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume(returning: channels)
-                    }
-                    
-                } catch {
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume(throwing: error)
-                    }
-                }
+            do {
+                
+                let channels = try rawNormalized(texture: texture, bits: bits)
+                
+                continuation.resume(returning: channels)
+                
+            } catch {
+                
+                continuation.resume(throwing: error)
             }
         }
     }
@@ -357,22 +350,15 @@ public extension TextureMap {
         
         try await withCheckedThrowingContinuation { continuation in
             
-            DispatchQueue.global(qos: .userInteractive).async {
+            do {
                 
-                do {
-                    
-                    let channels = try rawNormalized3d(texture: texture, bits: bits)
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume(returning: channels)
-                    }
-                    
-                } catch {
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume(throwing: error)
-                    }
-                }
+                let channels = try rawNormalized3d(texture: texture, bits: bits)
+                
+                continuation.resume(returning: channels)
+                
+            } catch {
+                
+                continuation.resume(throwing: error)
             }
         }
     }

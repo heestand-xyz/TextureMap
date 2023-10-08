@@ -163,22 +163,15 @@ public extension TextureMap {
         
         try await withCheckedThrowingContinuation { continuation in
             
-            DispatchQueue.global(qos: .userInteractive).async {
+            do {
                 
-                do {
-                    
-                    let image = try image(texture: texture, colorSpace: colorSpace, bits: bits)
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume(returning: image)
-                    }
-                    
-                } catch {
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume(throwing: error)
-                    }
-                }
+                let image = try image(texture: texture, colorSpace: colorSpace, bits: bits)
+                
+                continuation.resume(returning: image)
+                
+            } catch {
+                
+                continuation.resume(throwing: error)
             }
         }
     }
@@ -214,23 +207,16 @@ public extension TextureMap {
     static func write(image: TMImage, to url: URL, bits: TMBits, colorSpace: TMColorSpace) async throws {
 
         try await withCheckedThrowingContinuation { continuation in
-            
-            DispatchQueue.global(qos: .userInteractive).async {
                 
-                do {
-                    
-                    try write(image: image, to: url, bits: bits, colorSpace: colorSpace)
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume()
-                    }
-                    
-                } catch {
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume(throwing: error)
-                    }
-                }
+            do {
+                
+                try write(image: image, to: url, bits: bits, colorSpace: colorSpace)
+                
+                continuation.resume()
+                
+            } catch {
+                
+                continuation.resume(throwing: error)
             }
         }
     }
@@ -243,23 +229,16 @@ public extension TextureMap {
     static func readImage(from url: URL, xdr: Bool = false) async throws -> TMImage {
 
         try await withCheckedThrowingContinuation { continuation in
-            
-            DispatchQueue.global(qos: .userInteractive).async {
+               
+            do {
                 
-                do {
-                    
-                    let image: TMImage = try readImage(from: url, xdr: xdr)
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume(returning: image)
-                    }
-                    
-                } catch {
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume(throwing: error)
-                    }
-                }
+                let image: TMImage = try readImage(from: url, xdr: xdr)
+                
+                continuation.resume(returning: image)
+                
+            } catch {
+                
+                continuation.resume(throwing: error)
             }
         }
     }

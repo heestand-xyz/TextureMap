@@ -78,22 +78,15 @@ extension MTLTexture where Self == MTLTexture {
         
         try await withCheckedThrowingContinuation { continuation in
             
-            DispatchQueue.global(qos: .userInteractive).async {
+            do {
                 
-                do {
-                    
-                    let texture: MTLTexture = try .empty(resolution: resolution, bits: bits, swapRedAndBlue: swapRedAndBlue, usage: usage)
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume(returning: texture)
-                    }
-                    
-                } catch {
-                    
-                    DispatchQueue.main.async {
-                        continuation.resume(throwing: error)
-                    }
-                }
+                let texture: MTLTexture = try .empty(resolution: resolution, bits: bits, swapRedAndBlue: swapRedAndBlue, usage: usage)
+        
+                continuation.resume(returning: texture)
+                
+            } catch {
+                
+                continuation.resume(throwing: error)
             }
         }
     }
