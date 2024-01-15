@@ -2,6 +2,7 @@
 //  Created by Anton Heestand on 2022-04-01.
 //
 
+import Spatial
 import CoreGraphics
 import Metal
 import MetalPerformanceShaders
@@ -74,6 +75,7 @@ public enum TextureUsage {
 
 extension MTLTexture where Self == MTLTexture {
     
+    // 2D
     @available(*, deprecated, message: "Please use the sync function in a task.")
     public static func empty(resolution: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) async throws -> MTLTexture {
         
@@ -92,6 +94,7 @@ extension MTLTexture where Self == MTLTexture {
         }
     }
     
+    // 2D
     public static func empty(resolution: CGSize, bits: TMBits, sampleCount: Int = 1, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
         
         guard resolution.width >= 1,
@@ -117,23 +120,28 @@ extension MTLTexture where Self == MTLTexture {
         return texture
     }
     
-    public static func empty3d(resolution: SIMD3<Int>, bits: TMBits, usage: TextureUsage) throws -> MTLTexture {
+    // 3D
+    public static func empty3d(resolution: Size3D, bits: TMBits, usage: TextureUsage) throws -> MTLTexture {
         
-        guard resolution.x > 0 && resolution.y > 0 && resolution.z > 0 else {
+        let width = Int(resolution.width)
+        let height = Int(resolution.height)
+        let depth = Int(resolution.depth)
+        
+        guard width > 0 && height > 0 && depth > 0 else {
             throw TMError.resolutionZero
         }
         
         let maximum = 2048
-        guard resolution.x <= maximum && resolution.y <= maximum && resolution.z <= maximum else {
+        guard width <= maximum && height <= maximum && depth <= maximum else {
             throw TMError.resolutionTooHigh(maximum: maximum)
         }
         
         let descriptor = MTLTextureDescriptor()
         descriptor.pixelFormat = bits.metalPixelFormat()
         descriptor.textureType = .type3D
-        descriptor.width = resolution.x
-        descriptor.height = resolution.y
-        descriptor.depth = resolution.z
+        descriptor.width = width
+        descriptor.height = height
+        descriptor.depth = depth
         descriptor.usage = usage.textureUsage
         
         guard let texture = TextureMap.metalDevice.makeTexture(descriptor: descriptor) else {

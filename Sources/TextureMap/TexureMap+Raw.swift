@@ -3,6 +3,7 @@
 //
 
 import Foundation
+import Spatial
 import CoreGraphics
 import MetalKit
 
@@ -43,6 +44,7 @@ public extension TextureMap {
 
 public extension TextureMap {
     
+    /// 2D
     static func texture(channels: [UInt8], resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
         let count: Int = channels.count
         guard count == Int(resolution.width) * Int(resolution.height) * 4 else {
@@ -54,6 +56,19 @@ public extension TextureMap {
         return try texture(raw: pointer, resolution: resolution, on: device)
     }
     
+    /// 3D
+    static func texture3d(channels: [UInt8], resolution: Size3D, on device: MTLDevice) throws -> MTLTexture {
+        let count: Int = channels.count
+        guard count == Int(resolution.width) * Int(resolution.height) * Int(resolution.depth) * 4 else {
+            throw TMRawError.badResolution
+        }
+        var channels: [UInt8] = channels
+        let pointer = UnsafeMutablePointer<UInt8>.allocate(capacity: count)
+        pointer.initialize(from: &channels, count: count)
+        return try texture3d(raw: pointer, resolution: resolution, on: device)
+    }
+    
+    /// 2D
     static func texture(raw: UnsafePointer<UInt8>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
         guard resolution.width > 0 && resolution.height > 0 else {
             throw TMRawError.badResolution
@@ -71,8 +86,28 @@ public extension TextureMap {
         return texture
     }
     
+    /// 3D
+    static func texture3d(raw: UnsafePointer<UInt8>, resolution: Size3D, on device: MTLDevice) throws -> MTLTexture {
+        guard resolution.width > 0 && resolution.height > 0 && resolution.depth > 0 else {
+            throw TMRawError.badResolution
+        }
+        let bytesPerRow: Int = Int(resolution.width) * 4
+        let bytesPerImage: Int = Int(resolution.width) * Int(resolution.height) * 4
+        let capacity: Int = bytesPerImage * Int(resolution.depth)
+        let texture: MTLTexture = try .empty3d(resolution: resolution, bits: ._8, usage: .write)
+        let region = MTLRegion(origin: MTLOrigin(x: 0, y: 0, z: 0),
+                               size: MTLSize(width: Int(resolution.width),
+                                             height: Int(resolution.height),
+                                             depth: Int(resolution.depth)))
+        raw.withMemoryRebound(to: UInt8.self, capacity: capacity) { rawPointer in
+            texture.replace(region: region, mipmapLevel: 0, slice: 0, withBytes: rawPointer, bytesPerRow: bytesPerRow, bytesPerImage: bytesPerImage)
+        }
+        return texture
+    }
+    
     #if !os(macOS)
     
+    /// 2D
     @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
     static func texture(channels: [Float16], resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
         let count: Int = channels.count
@@ -85,6 +120,20 @@ public extension TextureMap {
         return try texture(raw: pointer, resolution: resolution, on: device)
     }
     
+    /// 3D
+    @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
+    static func texture3d(channels: [Float16], resolution: Size3D, on device: MTLDevice) throws -> MTLTexture {
+        let count: Int = channels.count
+        guard count == Int(resolution.width) * Int(resolution.height) * Int(resolution.depth) * 4 else {
+            throw TMRawError.badResolution
+        }
+        var channels: [Float16] = channels
+        let pointer = UnsafeMutablePointer<Float16>.allocate(capacity: count)
+        pointer.initialize(from: &channels, count: count)
+        return try texture3d(raw: pointer, resolution: resolution, on: device)
+    }
+    
+    /// 2D
     @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
     static func texture(raw: UnsafePointer<Float16>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
         let bytesPerRow: Int = Int(resolution.width) * 4 * 2
@@ -100,9 +149,26 @@ public extension TextureMap {
         return texture
     }
     
+    /// 3D
+    @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
+    static func texture3d(raw: UnsafePointer<Float16>, resolution: Size3D, on device: MTLDevice) throws -> MTLTexture {
+        let bytesPerRow: Int = Int(resolution.width) * 4 * 2
+        let bytesPerImage: Int = Int(resolution.width) * Int(resolution.height) * 4 * 2
+        let capacity: Int = bytesPerImage * Int(resolution.depth)
+        let texture: MTLTexture = try .empty3d(resolution: resolution, bits: ._8, usage: .write)
+        let region = MTLRegion(origin: MTLOrigin(x: 0, y: 0, z: 0),
+                               size: MTLSize(width: Int(resolution.width),
+                                             height: Int(resolution.height),
+                                             depth: Int(resolution.depth)))
+        raw.withMemoryRebound(to: Float16.self, capacity: capacity) { rawPointer in
+            texture.replace(region: region, mipmapLevel: 0, slice: 0, withBytes: rawPointer, bytesPerRow: bytesPerRow, bytesPerImage: bytesPerImage)
+        }
+        return texture
+    }
     
     #endif
     
+    /// 2D
     static func texture(channels: [Float], resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
         let count: Int = channels.count
         guard count == Int(resolution.width) * Int(resolution.height) * 4 else {
@@ -114,6 +180,19 @@ public extension TextureMap {
         return try texture(raw: pointer, resolution: resolution, on: device)
     }
     
+    /// 3D
+    static func texture3d(channels: [Float], resolution: Size3D, on device: MTLDevice) throws -> MTLTexture {
+        let count: Int = channels.count
+        guard count == Int(resolution.width) * Int(resolution.height) * Int(resolution.depth) * 4 else {
+            throw TMRawError.badResolution
+        }
+        var channels: [Float] = channels
+        let pointer = UnsafeMutablePointer<Float>.allocate(capacity: count)
+        pointer.initialize(from: &channels, count: count)
+        return try texture3d(raw: pointer, resolution: resolution, on: device)
+    }
+    
+    /// 2D
     static func texture(raw: UnsafePointer<Float>, resolution: CGSize, on device: MTLDevice) throws -> MTLTexture {
         let bytesPerRow: Int = Int(resolution.width) * 4 * 4
         let capacity: Int = bytesPerRow * Int(resolution.height)
@@ -127,12 +206,29 @@ public extension TextureMap {
         }
         return texture
     }
+    
+    /// 3D
+    static func texture3d(raw: UnsafePointer<Float>, resolution: Size3D, on device: MTLDevice) throws -> MTLTexture {
+        let bytesPerRow: Int = Int(resolution.width) * 4 * 4
+        let bytesPerImage: Int = Int(resolution.width) * Int(resolution.height) * 4 * 4
+        let capacity: Int = bytesPerImage * Int(resolution.depth)
+        let texture: MTLTexture = try .empty3d(resolution: resolution, bits: ._32, usage: .write)
+        let region = MTLRegion(origin: MTLOrigin(x: 0, y: 0, z: 0),
+                               size: MTLSize(width: Int(resolution.width),
+                                             height: Int(resolution.height),
+                                             depth: Int(resolution.depth)))
+        raw.withMemoryRebound(to: Float.self, capacity: capacity) { rawPointer in
+            texture.replace(region: region, mipmapLevel: 0, slice: 0, withBytes: rawPointer, bytesPerRow: bytesPerRow, bytesPerImage: bytesPerImage)
+        }
+        return texture
+    }
 }
 
 // MARK: - Texture to Raw
 
 public extension TextureMap {
     
+    /// 2D
     static func raw8(texture: MTLTexture) throws -> [UInt8] {
         let bits = try TMBits(texture: texture)
         guard bits == ._8 else {
@@ -147,6 +243,7 @@ public extension TextureMap {
         return raw
     }
     
+    /// 2D
     static func rawCopy8(texture: MTLTexture, on metalDevice: MTLDevice, in commandQueue: MTLCommandQueue) throws -> [UInt8] {
         let bits = try TMBits(texture: texture)
         guard bits == ._8 else {
@@ -180,6 +277,7 @@ public extension TextureMap {
         return raw
     }
     
+    /// 3D
     static func raw3d8(texture: MTLTexture) throws -> [UInt8] {
         let bits = try TMBits(texture: texture)
         guard bits == ._8 else {
@@ -195,6 +293,7 @@ public extension TextureMap {
         return raw
     }
     
+    /// 3D
     static func rawCopy3d8(texture: MTLTexture, on metalDevice: MTLDevice, in commandQueue: MTLCommandQueue) throws -> [UInt8] {
         let bits = try TMBits(texture: texture)
         guard bits == ._8 else {
@@ -233,6 +332,7 @@ public extension TextureMap {
     
     #if !os(macOS)
     
+    /// 2D
     @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
     static func raw16(texture: MTLTexture) throws -> [Float16] {
         let bits = try TMBits(texture: texture)
@@ -248,6 +348,7 @@ public extension TextureMap {
         return raw
     }
 
+    /// 3D
     @available(iOS 14.0, tvOS 14.0, macOS 11.0, *)
     static func raw3d16(texture: MTLTexture) throws -> [Float16] {
         let bits = try TMBits(texture: texture)
@@ -266,6 +367,7 @@ public extension TextureMap {
     
     #endif
     
+    /// 2D
     static func raw32(texture: MTLTexture) throws -> [Float] {
         let bits = try TMBits(texture: texture)
         guard bits == ._32 else {
@@ -280,6 +382,7 @@ public extension TextureMap {
         return raw
     }
     
+    /// 3D
     static func raw3d32(texture: MTLTexture) throws -> [Float] {
         let bits = try TMBits(texture: texture)
         guard bits == ._32 else {
@@ -295,6 +398,7 @@ public extension TextureMap {
         return raw
     }
     
+    /// 2D
     static func rawNormalized(texture: MTLTexture, bits: TMBits) async throws -> [CGFloat] {
         
         try await withCheckedThrowingContinuation { continuation in
@@ -312,6 +416,7 @@ public extension TextureMap {
         }
     }
     
+    /// 2D
     static func rawNormalized(texture: MTLTexture, bits: TMBits) throws -> [CGFloat] {
         let raw: [CGFloat]
         switch bits {
@@ -333,6 +438,7 @@ public extension TextureMap {
         return raw
     }
     
+    /// 2D
     static func rawNormalizedCopy(texture: MTLTexture, bits: TMBits, on metalDevice: MTLDevice, in commandQueue: MTLCommandQueue) throws -> [CGFloat] {
         let raw: [CGFloat]
         switch bits {
@@ -346,6 +452,7 @@ public extension TextureMap {
         return raw
     }
     
+    /// 3D
     static func rawNormalized3d(texture: MTLTexture, bits: TMBits) async throws -> [CGFloat] {
         
         try await withCheckedThrowingContinuation { continuation in
@@ -363,6 +470,7 @@ public extension TextureMap {
         }
     }
     
+    /// 3D
     static func rawNormalized3d(texture: MTLTexture, bits: TMBits) throws -> [CGFloat] {
         let raw: [CGFloat]
         switch bits {
@@ -384,6 +492,7 @@ public extension TextureMap {
         return raw
     }
     
+    /// 3D
     static func rawNormalizedCopy3d(texture: MTLTexture, bits: TMBits, on metalDevice: MTLDevice, in commandQueue: MTLCommandQueue) throws -> [CGFloat] {
         let raw: [CGFloat]
         switch bits {
