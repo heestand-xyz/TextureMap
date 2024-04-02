@@ -102,8 +102,8 @@ extension MTLTexture where Self == MTLTexture {
             throw TMError.resolutionZero
         }
         
-        guard resolution.width < 16_384,
-              resolution.height < 16_384 else {
+        guard resolution.width <= 16_384,
+              resolution.height <= 16_384 else {
             throw TMError.resolutionTooHigh(maximum: 16_384)
         }
         
