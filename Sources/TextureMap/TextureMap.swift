@@ -96,6 +96,64 @@ public extension TextureMap {
         return texture
     }
     
+    static func textureViaContext(cgImage: CGImage) throws -> MTLTexture {
+        
+        let width = cgImage.width
+        let height = cgImage.height
+        
+        let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .rgba8Unorm,
+            width: width,
+            height: height,
+            mipmapped: false
+        )
+        guard let texture = Self.metalDevice.makeTexture(descriptor: textureDescriptor) else {
+            throw TextureError.imageToTextureConversionFailed
+        }
+
+        let bytesPerPixel = 4
+        let bytesPerRow = bytesPerPixel * width
+        let imageData = UnsafeMutablePointer<UInt8>.allocate(
+            capacity: width * height * bytesPerPixel
+        )
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+        guard let context = CGContext(
+            data: imageData,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: colorSpace,
+            bitmapInfo: bitmapInfo
+        ) else {
+            throw TextureError.imageToTextureConversionFailed
+        }
+        
+        context.draw(
+            cgImage,
+            in: CGRect(
+                x: 0,
+                y: 0,
+                width: width,
+                height: height
+            )
+        )
+        
+        let region = MTLRegionMake2D(0, 0, width, height)
+        texture.replace(
+            region: region,
+            mipmapLevel: 0,
+            withBytes: imageData,
+            bytesPerRow: bytesPerRow
+        )
+
+        imageData.deallocate()
+        
+        return texture
+    }
+    
     static func texture(ciImage: CIImage, colorSpace: TMColorSpace? = nil, bits: TMBits? = nil) throws -> MTLTexture {
         
         let cgImage: CGImage = try cgImage(ciImage: ciImage, colorSpace: colorSpace, bits: bits)
