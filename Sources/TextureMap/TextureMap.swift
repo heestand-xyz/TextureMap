@@ -116,7 +116,7 @@ public extension TextureMap {
         let imageData = UnsafeMutablePointer<UInt8>.allocate(
             capacity: width * height * bytesPerPixel
         )
-
+        
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
         guard let context = CGContext(
@@ -149,8 +149,6 @@ public extension TextureMap {
             bytesPerRow: bytesPerRow
         )
 
-        imageData.deallocate()
-        
         return texture
     }
     
