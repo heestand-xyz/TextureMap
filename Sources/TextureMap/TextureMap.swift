@@ -30,6 +30,8 @@ public extension TextureMap {
         case cvMetalTextureCacheCreateTextureFromImageFailed
         case cvMetalTextureGetTextureFailed
         case imageToTextureConversionFailed
+        case cgContextFailedToCreate
+        case makeOfCGImageFailed
         
         public var errorDescription: String? {
             switch self {
@@ -49,6 +51,10 @@ public extension TextureMap {
                 return "TextureMap - CV Metal Texture Get Texture Failed"
             case .imageToTextureConversionFailed:
                 return "TextureMap - Image to Texture Conversion Failed"
+            case .cgContextFailedToCreate:
+                return "TextureMap - CG Context Failed to Create"
+            case .makeOfCGImageFailed:
+                return "TextureMap - Make of CG Image Failed"
             }
         }
     }
@@ -385,6 +391,37 @@ public extension TextureMap {
         let ciImage = try ciImage(texture: texture, colorSpace: colorSpace)
         
         return try cgImage(ciImage: ciImage, colorSpace: colorSpace, bits: bits)
+    }
+    
+    static func copyCGImage(texture: MTLTexture) throws -> CGImage {
+        
+        let bits = try TMBits(texture: texture)
+        let width: Int = texture.width
+        let height: Int = texture.height
+        let rowBytes: Int = texture.width * 4 * (bits.rawValue / 8)
+        let dataSize: Int = rowBytes * height
+        var data = [UInt8](repeating: 0, count: dataSize)
+        
+        let region = MTLRegionMake2D(0, 0, width, height)
+        texture.getBytes(&data, bytesPerRow: rowBytes, from: region, mipmapLevel: 0)
+        
+        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let context = CGContext(data: &data,
+                                      width: width,
+                                      height: height,
+                                      bitsPerComponent: bits.rawValue,
+                                      bytesPerRow: rowBytes,
+                                      space: colorSpace,
+                                      bitmapInfo: bitmapInfo.rawValue) else {
+            throw TextureError.cgContextFailedToCreate
+        }
+        
+        guard let cgImage: CGImage = context.makeImage() else {
+            throw TextureError.makeOfCGImageFailed
+        }
+        
+        return cgImage
     }
     
     static func cgImage(ciImage: CIImage, colorSpace: TMColorSpace? = nil, bits: TMBits? = nil) throws -> CGImage {
