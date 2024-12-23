@@ -5,7 +5,7 @@
 import Foundation
 import MetalKit
 
-public enum TMBits: Int, Codable, CaseIterable, Comparable {
+public enum TMBits: Int, Codable, CaseIterable, Comparable, Sendable {
   
     case _8 = 8
     case _16 = 16

@@ -60,7 +60,7 @@ public extension MTLTexture {
             throw TMTextureSampleError.makeBlitCommandEncoderFailed
         }
         
-        let targetTexture: MTLTexture = try await .empty(resolution: resolution, bits: bits)
+        let targetTexture: MTLTexture = try .empty(resolution: resolution, bits: bits)
         
         let sourceOrigin = MTLOrigin(x: axis == .x ? index : 0,
                                      y: axis == .y ? index : 0,
