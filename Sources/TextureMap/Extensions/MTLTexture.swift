@@ -12,7 +12,7 @@ import MetalPerformanceShaders
 extension MTLTexture {
     
     public func image(colorSpace: TMColorSpace, bits: TMBits) async throws -> TMImage {
-        try await TextureMap.image(texture: self, colorSpace: colorSpace, bits: bits)
+        try TextureMap.image(texture: self, colorSpace: colorSpace, bits: bits)
     }
 }
 
@@ -40,7 +40,7 @@ extension MTLTexture {
         
         let resolution = CGSize(width: width, height: height)
         let bits = try TMBits(texture: self)
-        let targetTexture: MTLTexture = try await .empty(resolution: resolution, bits: bits, usage: .write)
+        let targetTexture: MTLTexture = try .empty(resolution: resolution, bits: bits, usage: .write)
 
         conversion.encode(commandBuffer: commandBuffer, sourceTexture: self, destinationTexture: targetTexture)
         
@@ -74,25 +74,6 @@ public enum TextureUsage {
 }
 
 extension MTLTexture where Self == MTLTexture {
-    
-    // 2D
-    @available(*, deprecated, message: "Please use the sync function in a task.")
-    public static func empty(resolution: CGSize, bits: TMBits, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) async throws -> MTLTexture {
-        
-        try await withCheckedThrowingContinuation { continuation in
-            
-            do {
-                
-                let texture: MTLTexture = try .empty(resolution: resolution, bits: bits, swapRedAndBlue: swapRedAndBlue, usage: usage)
-        
-                continuation.resume(returning: texture)
-                
-            } catch {
-                
-                continuation.resume(throwing: error)
-            }
-        }
-    }
     
     // 2D
     public static func empty(resolution: CGSize, bits: TMBits, sampleCount: Int = 1, swapRedAndBlue: Bool = false, usage: TextureUsage = .renderTarget) throws -> MTLTexture {
@@ -160,7 +141,7 @@ extension MTLTexture {
         
         let bits = try TMBits(texture: self)
         
-        let textureCopy: MTLTexture = try await .empty(resolution: CGSize(width: width, height: height), bits: bits)
+        let textureCopy: MTLTexture = try .empty(resolution: CGSize(width: width, height: height), bits: bits)
         
         guard let commandQueue = TextureMap.metalDevice.makeCommandQueue() else {
             throw TMError.makeCommandQueueFailed

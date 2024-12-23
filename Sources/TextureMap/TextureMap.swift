@@ -3,7 +3,7 @@
 //
 
 import Foundation
-import VideoToolbox
+@preconcurrency import VideoToolbox
 import MetalKit
 
 public struct TextureMap {
@@ -207,7 +207,6 @@ public extension TextureMap {
             throw TextureError.cvMetalTextureCacheCreateTextureFromImageFailed
         }
 
-        // Get a Metal texture object from the texture reference.
         let texture: MTLTexture! = CVMetalTextureGetTexture(metalTexture)
         if texture == nil {
             throw TextureError.cvMetalTextureGetTextureFailed
@@ -221,25 +220,7 @@ public extension TextureMap {
 
 public extension TextureMap {
     
-    @available(*, deprecated, message: "Please use the sync function in a task.")
-    static func image(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) async throws -> TMImage {
-        
-        try await withCheckedThrowingContinuation { continuation in
-            
-            do {
-                
-                let image = try image(texture: texture, colorSpace: colorSpace, bits: bits)
-                
-                continuation.resume(returning: image)
-                
-            } catch {
-                
-                continuation.resume(throwing: error)
-            }
-        }
-    }
-    
-    private static func image(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) throws -> TMImage {
+    static func image(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) throws -> TMImage {
                 
         let ciImage: CIImage = try ciImage(texture: texture, colorSpace: colorSpace)
 
@@ -267,45 +248,9 @@ public extension TextureMap {
         #endif
     }
     
-    @available(*, deprecated, message: "Please use the sync function in a task.")
-    static func write(image: TMImage, to url: URL, bits: TMBits, colorSpace: TMColorSpace) async throws {
-
-        try await withCheckedThrowingContinuation { continuation in
-                
-            do {
-                
-                try write(image: image, to: url, bits: bits, colorSpace: colorSpace)
-                
-                continuation.resume()
-                
-            } catch {
-                
-                continuation.resume(throwing: error)
-            }
-        }
-    }
-    
     static func write(image: TMImage, to url: URL, bits: TMBits, colorSpace: TMColorSpace) throws {
         let ciImage: CIImage = try ciImage(image: image)
         try write(ciImage: ciImage, to: url, bits: bits, colorSpace: colorSpace)
-    }
-    
-    @available(*, deprecated, message: "Please use the sync function in a task.")
-    static func readImage(from url: URL, xdr: Bool = false) async throws -> TMImage {
-
-        try await withCheckedThrowingContinuation { continuation in
-               
-            do {
-                
-                let image: TMImage = try readImage(from: url, xdr: xdr)
-                
-                continuation.resume(returning: image)
-                
-            } catch {
-                
-                continuation.resume(throwing: error)
-            }
-        }
     }
     
     static func readImage(from url: URL, xdr: Bool = false) throws -> TMImage {

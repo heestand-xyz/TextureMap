@@ -9,7 +9,7 @@ import CoreImage
 import AppKit
 #endif
 
-public enum TMColorSpace: Equatable /*, String, Codable, CaseIterable*/ {
+public enum TMColorSpace: Equatable, Sendable {
     case sRGB
     case displayP3
     case xdr
