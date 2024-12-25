@@ -268,7 +268,7 @@ public extension TextureMap {
         var options: [CIImageOption : Any] = [:]
         options[.colorSpace] = colorSpace.cgColorSpace
         if colorSpace == .xdr {
-            if #available(iOS 17.0, macOS 14.0, *) {
+            if #available(iOS 17.0, tvOS 17.0, macOS 14.0, *) {
                 options[.expandToHDR] = true
                 options[.colorSpace] = TMColorSpace.sRGB.cgColorSpace
             }
@@ -316,7 +316,7 @@ public extension TextureMap {
     
     static func readImage(from url: URL, xdr: Bool = false) throws -> CIImage {
         var options: [CIImageOption: Any] = [:]
-        if #available(iOS 17.0, macOS 14.0, *) {
+        if #available(iOS 17.0, tvOS 17.0, macOS 14.0, *) {
             options[.expandToHDR] = xdr
         }
         guard let ciImage = CIImage(contentsOf: url,
