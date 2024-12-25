@@ -7,7 +7,7 @@ final class TextureMapTests: XCTestCase {
         
         let size = CGSize(width: 200, height: 100)
         
-        let emptyTexture: MTLTexture = try await .empty(resolution: size, bits: ._8)
+        let emptyTexture: MTLTexture = try .empty(resolution: size, bits: ._8)
         
         XCTAssertEqual(emptyTexture.width, Int(size.width))
         XCTAssertEqual(emptyTexture.height, Int(size.height))
