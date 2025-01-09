@@ -10,10 +10,45 @@ import AppKit
 #endif
 
 public enum TMColorSpace: Equatable, Sendable {
-    case sRGB
-    case displayP3
+    case linearSRGB
+    case nonLinearSRGB
+    case linearDisplayP3
+    case nonLinearDisplayP3
     case xdr
     case custom(CGColorSpace)
+}
+
+// MARK: - Defaults
+
+extension TMColorSpace {
+    public static let sRGB: TMColorSpace = .nonLinearSRGB
+    public static let displayP3: TMColorSpace = .nonLinearDisplayP3
+}
+
+// MARK: - Is
+
+extension TMColorSpace {
+    var isSRGB: Bool {
+        [.linearSRGB, .nonLinearSRGB].contains(self)
+    }
+    
+    var isDisplayP3: Bool {
+        [.linearDisplayP3, .nonLinearDisplayP3].contains(self)
+    }
+}
+
+// MARK: - Cases
+
+extension TMColorSpace {
+    private static var nonCustomCases: [TMColorSpace] {
+        [
+            .linearSRGB,
+            .nonLinearSRGB,
+            .linearDisplayP3,
+            .nonLinearDisplayP3,
+            .xdr
+        ]
+    }
 }
 
 // MARK: - Description
@@ -21,10 +56,14 @@ public enum TMColorSpace: Equatable, Sendable {
 extension TMColorSpace: CustomStringConvertible {
     public var description: String {
         switch self {
-        case .sRGB:
-            return "sRGB"
-        case .displayP3:
-            return "Display P3"
+        case .linearSRGB:
+            return "Linear sRGB"
+        case .nonLinearSRGB:
+            return "Non Linear sRGB"
+        case .linearDisplayP3:
+            return "Linear Display P3"
+        case .nonLinearDisplayP3:
+            return "Non Linear Display P3"
         case .xdr:
             return "XDR"
         case .custom(let cgColorSpace):
@@ -33,48 +72,22 @@ extension TMColorSpace: CustomStringConvertible {
     }
 }
 
-// MARK: - Linear
+// MARK: - CG Color Space
 
 extension TMColorSpace {
     
-    var linearCGColorSpace: CGColorSpace {
+    public var cgColorSpace: CGColorSpace {
         switch self {
-        case .sRGB:
+        case .linearSRGB:
             return CGColorSpace(name: CGColorSpace.linearSRGB)!
-        case .displayP3:
-            if #available(iOS 15.0, tvOS 15.0, macOS 12.0, *) {
-                return CGColorSpace(name: CGColorSpace.linearDisplayP3)!
-            } else {
-                return CGColorSpace(name: CGColorSpace.displayP3)!
-            }
-        case .xdr:
-            if #available(iOS 14.0, macOS 11.0, *) {
-                return CGColorSpace(name: CGColorSpace.itur_2100_PQ)! // HLG
-            } else {
-                return CGColorSpace(name: CGColorSpace.linearSRGB)!
-            }
-        case .custom(let cgColorSpace):
-            return cgColorSpace
-        }
-    }
-}
-
-// MARK: - Format
-
-public extension TMColorSpace {
-    
-    var cgColorSpace: CGColorSpace {
-        switch self {
-        case .sRGB:
+        case .nonLinearSRGB:
             return CGColorSpace(name: CGColorSpace.sRGB)!
-        case .displayP3:
+        case .linearDisplayP3:
+            return CGColorSpace(name: CGColorSpace.linearDisplayP3)!
+        case .nonLinearDisplayP3:
             return CGColorSpace(name: CGColorSpace.displayP3)!
         case .xdr:
-            if #available(iOS 14.0, macOS 11.0, *) {
-                return CGColorSpace(name: CGColorSpace.itur_2100_PQ)! // HLG
-            } else {
-                return CGColorSpace(name: CGColorSpace.sRGB)!
-            }
+            return CGColorSpace(name: CGColorSpace.itur_2100_PQ)! // HLG
         case .custom(let cgColorSpace):
             return cgColorSpace
         }
@@ -95,7 +108,7 @@ public extension TMColorSpace {
     
     var isMonochrome: Bool {
         switch self {
-        case .sRGB, .displayP3, .xdr:
+        case .linearSRGB, .nonLinearSRGB, .linearDisplayP3, .nonLinearDisplayP3, .xdr:
             return false
         case .custom(let cgColorSpace):
             return cgColorSpace.model == .monochrome
@@ -109,40 +122,23 @@ public extension TMColorSpace {
     
     init(cgColorSpace: CGColorSpace) throws {
         
-//        for colorSpace in TMColorSpace.allCases {
-//            if colorSpace.cgColorSpace == cgColorSpace {
-//                self = colorSpace
-//                return
-//            }
-//        }
-        
-        if cgColorSpace == TMColorSpace.displayP3.cgColorSpace || cgColorSpace.name == CGColorSpace.extendedSRGB {
-            self = .displayP3
-            return
-        } else if cgColorSpace == TMColorSpace.sRGB.cgColorSpace {
-            self = .sRGB
-            return
-        } else {
-            if #available(iOS 14.0, macOS 11.0, *) {
-                if cgColorSpace == CGColorSpace(name: CGColorSpace.itur_2100_PQ)! ||
-                    cgColorSpace == CGColorSpace(name: CGColorSpace.itur_2100_HLG)! {
-                    self = .xdr
-                    return
-                }
+        for nonCustomCase in Self.nonCustomCases {
+            if cgColorSpace == nonCustomCase.cgColorSpace {
+                self = nonCustomCase
+                return
             }
-            self = .custom(cgColorSpace) // .sRGB
-            return
         }
         
-//        switch cgColorSpace.model {
-//        case .rgb, .monochrome:
-//            self = .sRGB
-//            return
-//        default:
-//            break
-//        }
-        
-//        throw TMColorSpaceError.notSupported(cgColorSpace)
+        if cgColorSpace.name == CGColorSpace.extendedSRGB {
+            self = .nonLinearDisplayP3
+            return
+        } else if cgColorSpace == CGColorSpace(name: CGColorSpace.itur_2100_PQ)! ||
+            cgColorSpace == CGColorSpace(name: CGColorSpace.itur_2100_HLG)! {
+            self = .xdr
+            return
+        } else {
+            self = .custom(cgColorSpace)
+        }
     }
     
     init(cgImage: CGImage) throws {
@@ -169,9 +165,21 @@ public extension TMColorSpace {
             return try TMColorSpace(cgImage: cgImage)
         }
         
-        if colorSpaces.contains(.displayP3) {
+        if colorSpaces.contains(.linearDisplayP3) {
             
-            self = .displayP3
+            self = .linearDisplayP3
+            
+        } else if colorSpaces.contains(.nonLinearDisplayP3) {
+            
+            self = .nonLinearDisplayP3
+            
+        } else if colorSpaces.contains(.linearSRGB) {
+            
+            self = .linearSRGB
+            
+        } else if colorSpaces.contains(.nonLinearSRGB) {
+            
+            self = .nonLinearSRGB
             
         } else {
             
