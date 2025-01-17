@@ -133,3 +133,11 @@ public extension UIImage {
     }
 }
 #endif
+
+#if !os(macOS)
+public extension UIImage {
+    convenience init?(contentsOf url: URL) {
+        self.init(contentsOfFile: url.path(percentEncoded: false))
+    }
+}
+#endif
