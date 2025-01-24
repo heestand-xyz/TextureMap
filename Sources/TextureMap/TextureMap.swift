@@ -536,3 +536,57 @@ extension TextureMap {
         return sampleBuffer
     }
 }
+
+// MARK: - CGImageSource
+
+extension TextureMap {
+    enum ImageSourceError: String, LocalizedError {
+        case imageSourceCreateFailed
+        case imageNotFound
+        case dataProviderNotFound
+        case unsupportedAssetFile
+        case dataNotFound
+        case finalizationFailed
+        var errorDescription: String? {
+            switch self {
+            case .imageSourceCreateFailed:
+                "Image source create failed."
+            case .imageNotFound:
+                "Image not found."
+            case .dataProviderNotFound:
+                "Data provider not found."
+            case .unsupportedAssetFile:
+                "Unsupported asset file."
+            case .dataNotFound:
+                "Data not found."
+            case .finalizationFailed:
+                "Finalization failed."
+            }
+        }
+    }
+    
+    public static func cgImageSource(cgImage: CGImage) throws -> CGImageSource {
+        guard let dataProvider: CGDataProvider = cgImage.dataProvider else {
+            throw ImageSourceError.dataProviderNotFound
+        }
+        guard let imageSource: CGImageSource = CGImageSourceCreateWithDataProvider(dataProvider, nil) else {
+            throw ImageSourceError.imageSourceCreateFailed
+        }
+        return imageSource
+    }
+    
+    public static func cgImageSource(url: URL) throws -> CGImageSource {
+        guard let imageSource = CGImageSourceCreateWithURL(url as CFURL, nil) else {
+            throw ImageSourceError.imageSourceCreateFailed
+        }
+        return imageSource
+    }
+    
+    public static func cgImageSource(data: Data) throws -> CGImageSource {
+        guard let imageSource = CGImageSourceCreateWithData(data as CFData, nil) else {
+            throw ImageSourceError.imageSourceCreateFailed
+        }
+        return imageSource
+    }
+}
+
