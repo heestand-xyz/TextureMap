@@ -182,13 +182,13 @@ public extension TextureMap {
     }
     #endif
     
-    static func texture(sampleBuffer: CMSampleBuffer) throws -> MTLTexture {
+    static func texture(sampleBuffer: CMSampleBuffer, planeIndex: Int = 0) throws -> MTLTexture {
         guard let pixelBuffer: CVPixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
         else { throw TextureError.cmSampleBufferGetImageBufferFailed }
-        return try texture(pixelBuffer: pixelBuffer)
+        return try texture(pixelBuffer: pixelBuffer, planeIndex: planeIndex)
     }
     
-    static func texture(pixelBuffer: CVPixelBuffer) throws -> MTLTexture {
+    static func texture(pixelBuffer: CVPixelBuffer, planeIndex: Int = 0) throws -> MTLTexture {
         
         var textureCache: CVMetalTextureCache!
         CVMetalTextureCacheCreate(nil, nil, metalDevice, nil, &textureCache)
@@ -197,12 +197,22 @@ public extension TextureMap {
         }
 
         var metalTexture: CVMetalTexture!
-        let width = CVPixelBufferGetWidth(pixelBuffer)
-        let height = CVPixelBufferGetHeight(pixelBuffer)
+        var width = CVPixelBufferGetWidth(pixelBuffer)
+        var height = CVPixelBufferGetHeight(pixelBuffer)
         let osType: OSType = CVPixelBufferGetPixelFormatType(pixelBuffer)
         let isGrayscale: Bool = osType == OSType(1278226488)
-        let format: MTLPixelFormat = isGrayscale ? .r8Unorm : .bgra8Unorm
-        CVMetalTextureCacheCreateTextureFromImage(nil, textureCache, pixelBuffer, nil, format, width, height, 0, &metalTexture)
+        let isVUV: Bool = osType == OSType(875704438)
+        let format: MTLPixelFormat
+        if isVUV {
+            format = planeIndex == 1 ? .rg8Unorm : .r8Unorm
+            if planeIndex == 1 {
+                width /= 2
+                height /= 2
+            }
+        } else {
+            format = isGrayscale ? .r8Unorm : .bgra8Unorm
+        }
+        CVMetalTextureCacheCreateTextureFromImage(nil, textureCache, pixelBuffer, nil, format, width, height, planeIndex, &metalTexture)
         if metalTexture == nil {
             throw TextureError.cvMetalTextureCacheCreateTextureFromImageFailed
         }
