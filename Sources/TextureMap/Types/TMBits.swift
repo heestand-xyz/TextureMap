@@ -68,7 +68,9 @@ public extension TMBits {
         if bits == nil {
             if metalPixelFormat == .bgra8Unorm_srgb {
                 bits = ._8
-            } else if metalPixelFormat == .rgba16Unorm {
+            } else if [.r32Float, .rg32Float].contains(metalPixelFormat) {
+                bits = ._32
+            } else if [.r16Float, .rg16Float, .rgba16Unorm].contains(metalPixelFormat) {
                 bits = ._16
             } else if metalPixelFormat == .r8Unorm {
                 bits = ._8

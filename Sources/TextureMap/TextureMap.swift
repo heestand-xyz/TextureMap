@@ -201,6 +201,7 @@ public extension TextureMap {
         var height = CVPixelBufferGetHeight(pixelBuffer)
         let osType: OSType = CVPixelBufferGetPixelFormatType(pixelBuffer)
         let isGrayscale: Bool = osType == OSType(1278226488)
+        let isPRGB: Bool = osType == OSType(1278226534)
         let isVUV: Bool = osType == OSType(875704438)
         let format: MTLPixelFormat
         if isVUV {
@@ -210,7 +211,7 @@ public extension TextureMap {
                 height /= 2
             }
         } else {
-            format = isGrayscale ? .r8Unorm : .bgra8Unorm
+            format = isPRGB ? .rg16Float : isGrayscale ? .r8Unorm : .bgra8Unorm
         }
         CVMetalTextureCacheCreateTextureFromImage(nil, textureCache, pixelBuffer, nil, format, width, height, planeIndex, &metalTexture)
         if metalTexture == nil {
