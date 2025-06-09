@@ -9,6 +9,7 @@ import SwiftUI
 import MobileCoreServices
 #endif
 import UniformTypeIdentifiers
+import AVFoundation
 
 #if os(macOS)
 public typealias TMImage = NSImage
@@ -85,6 +86,15 @@ public extension NSImage {
         guard let representation = tiffRepresentation else { return nil }
         guard let bitmap = NSBitmapImageRep(data: representation) else { return nil }
         return bitmap.representation(using: .jpeg, properties: [.compressionFactor: compressionQuality])
+    }
+    func heicData(compressionQuality: CGFloat) -> Data? {
+        guard let cgImage = self.cgImage else { return nil }
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data as CFMutableData, AVFileType.heic as CFString, 1, nil) else { return nil }
+        let options: [CFString: Any] = [kCGImageDestinationLossyCompressionQuality: compressionQuality]
+        CGImageDestinationAddImage(destination, cgImage, options as CFDictionary)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return data as Data
     }
     func tiffData() -> Data? {
         tiffRepresentation
