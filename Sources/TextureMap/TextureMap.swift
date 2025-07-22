@@ -5,6 +5,8 @@
 import Foundation
 @preconcurrency import VideoToolbox
 import MetalKit
+import MetalPerformanceShaders
+import IOSurface
 
 public struct TextureMap {
     
@@ -32,6 +34,11 @@ public extension TextureMap {
         case imageToTextureConversionFailed
         case cgContextFailedToCreate
         case makeOfCGImageFailed
+        case makeOfIOSurfaceFailed
+        case makeOfMTLTextureFailed
+        case makeCommandQueueFailed
+        case makeCommandBufferFailed
+        case makeBlitCommandEncoderFailed
         
         public var errorDescription: String? {
             switch self {
@@ -55,6 +62,16 @@ public extension TextureMap {
                 return "TextureMap - CG Context Failed to Create"
             case .makeOfCGImageFailed:
                 return "TextureMap - Make of CG Image Failed"
+            case .makeOfIOSurfaceFailed:
+                return "TextureMap - Make of IO Surface Failed"
+            case .makeOfMTLTextureFailed:
+                return "TextureMap - Make of Metal Texture Failed"
+            case .makeCommandQueueFailed:
+                return "TextureMap - Make Command Queue Failed"
+            case .makeCommandBufferFailed:
+                return "TextureMap - Make Command Buffer Failed"
+            case .makeBlitCommandEncoderFailed:
+                return "TextureMap - Make Blit Command Encoder Failed"
             }
         }
     }
@@ -599,5 +616,86 @@ extension TextureMap {
         }
         return imageSource
     }
+    
+    public static func cgImageSource(texture: MTLTexture, colorSpace: TMColorSpace, bits: TMBits) throws -> CGImageSource {
+        try cgImageSource(cgImage: cgImage(texture: texture, colorSpace: colorSpace, bits: bits))
+    }
 }
 
+// MARK: - IO Surface
+
+extension TextureMap {
+    
+    public static func iosurface(texture: MTLTexture) throws -> IOSurfaceRef {
+        if let iosurface = texture.iosurface {
+            return iosurface
+        }
+        let bits = try TMBits(texture: texture)
+        let channelCount: Int = 4
+        let bytesPerElement: Int = (bits.rawValue / 8) * channelCount
+        let bytesPerRow: Int = texture.width * bytesPerElement
+        let props: [IOSurfacePropertyKey: Any] = [
+            .width: texture.width,
+            .height: texture.height,
+            .bytesPerElement: bytesPerElement,
+            .pixelFormat: bits.osType,
+            .bytesPerRow: bytesPerRow
+        ]
+        guard let iosurface = IOSurfaceCreate(props as CFDictionary) else {
+            throw TextureError.makeOfIOSurfaceFailed
+        }
+        return iosurface
+    }
+    
+    public static func textureWithIOSurface(texture: MTLTexture) async throws -> (MTLTexture, IOSurfaceRef) {
+        if let iosurface = texture.iosurface {
+            return (texture, iosurface)
+        }
+        let iosurface: IOSurface = try iosurface(texture: texture)
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: texture.pixelFormat,
+            width: texture.width,
+            height: texture.height,
+            mipmapped: false
+        )
+        descriptor.usage = [.shaderRead, .shaderWrite]
+        descriptor.storageMode = .shared
+
+        guard let iosurfaceTexture = Self.metalDevice.makeTexture(
+            descriptor: descriptor,
+            iosurface: iosurface,
+            plane: 0
+        ) else {
+            throw TextureError.makeOfMTLTextureFailed
+        }
+        
+        guard let commandQueue: MTLCommandQueue = Self.metalDevice.makeCommandQueue() else {
+            throw TextureError.makeCommandQueueFailed
+        }
+        guard let commandBuffer: MTLCommandBuffer = commandQueue.makeCommandBuffer()  else {
+            throw TextureError.makeCommandBufferFailed
+        }
+        guard let blitEncoder = commandBuffer.makeBlitCommandEncoder()  else {
+            throw TextureError.makeBlitCommandEncoderFailed
+        }
+        blitEncoder.copy(from: texture,
+                         sourceSlice: 0,
+                         sourceLevel: 0,
+                         sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),
+                         sourceSize: MTLSize(width: texture.width,
+                                             height: texture.height,
+                                             depth: 1),
+                         to: iosurfaceTexture,
+                         destinationSlice: 0,
+                         destinationLevel: 0,
+                         destinationOrigin: MTLOrigin(x: 0, y: 0, z: 0))
+        blitEncoder.endEncoding()
+        await withCheckedContinuation { continuation in
+            commandBuffer.addCompletedHandler { _ in
+                continuation.resume()
+            }
+            commandBuffer.commit()
+        }
+        return (iosurfaceTexture, iosurface)
+    }
+}
