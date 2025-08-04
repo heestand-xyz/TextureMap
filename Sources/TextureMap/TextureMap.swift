@@ -220,8 +220,11 @@ public extension TextureMap {
         let isGrayscale: Bool = osType == OSType(1278226488)
         let isPRGB: Bool = osType == OSType(1278226534)
         let isVUV: Bool = osType == OSType(875704438)
+        let isTwo32: Bool = osType == kCVPixelFormatType_TwoComponent32Float
         let format: MTLPixelFormat
-        if isVUV {
+        if isTwo32 {
+            format = .rg32Float
+        } else if isVUV {
             format = planeIndex == 1 ? .rg8Unorm : .r8Unorm
             if planeIndex == 1 {
                 width /= 2
@@ -467,6 +470,45 @@ extension TextureMap {
         }
     }
     
+    public static func pixelBuffer(texture: MTLTexture) throws -> CVPixelBuffer {
+        let width = texture.width
+        let height = texture.height
+        let bits = try TMBits(texture: texture)
+        let bytesPerPixel = (bits.rawValue * 4) / 8
+        let bytesPerRow = width * bytesPerPixel
+        
+        let attributes: [CFString: Any] = [
+            kCVPixelBufferPixelFormatTypeKey: Int(bits.osType) as CFNumber,
+            kCVPixelBufferIOSurfacePropertiesKey: [:],
+            kCVPixelBufferMetalCompatibilityKey: true,
+            kCVPixelBufferCGBitmapContextCompatibilityKey: true,
+            kCVPixelBufferCGImageCompatibilityKey: true
+        ]
+        
+        var pixelBuffer: CVPixelBuffer?
+        let status = CVPixelBufferCreate(nil, width, height, bits.osType, attributes as CFDictionary, &pixelBuffer)
+        guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
+            throw PixelBufferError.cvPixelBufferCreateFailed
+        }
+        
+        CVPixelBufferLockBaseAddress(buffer, [])
+        defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
+        
+        guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else {
+            throw PixelBufferError.cvPixelBufferLockBaseAddressFailed
+        }
+        
+        texture.getBytes( // EXC_BAD_ACCESS
+            baseAddress,
+            bytesPerRow: bytesPerRow,
+            from: MTLRegionMake2D(0, 0, width, height),
+            mipmapLevel: 0
+        )
+        
+        return buffer
+    }
+    
+    @available(*, deprecated, renamed: "pixelBuffer(texture:)", message: "Moving from a CGImage based approach to a raw bytes approach.")
     public static func pixelBuffer(texture: MTLTexture, colorSpace: TMColorSpace) throws -> CVPixelBuffer {
         
         let bits = try TMBits(texture: texture)
