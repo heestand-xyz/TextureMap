@@ -474,8 +474,6 @@ extension TextureMap {
         let width = texture.width
         let height = texture.height
         let bits = try TMBits(texture: texture)
-        let bytesPerPixel = (bits.rawValue * 4) / 8
-        let bytesPerRow = width * bytesPerPixel
         
         let attributes: [CFString: Any] = [
             kCVPixelBufferPixelFormatTypeKey: Int(bits.osType) as CFNumber,
@@ -490,6 +488,7 @@ extension TextureMap {
         guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
             throw PixelBufferError.cvPixelBufferCreateFailed
         }
+        let bytesPerRow: Int = CVPixelBufferGetBytesPerRow(buffer)
         
         CVPixelBufferLockBaseAddress(buffer, [])
         defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
@@ -498,7 +497,7 @@ extension TextureMap {
             throw PixelBufferError.cvPixelBufferLockBaseAddressFailed
         }
         
-        texture.getBytes( // EXC_BAD_ACCESS
+        texture.getBytes(
             baseAddress,
             bytesPerRow: bytesPerRow,
             from: MTLRegionMake2D(0, 0, width, height),

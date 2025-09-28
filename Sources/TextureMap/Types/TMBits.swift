@@ -40,7 +40,7 @@ public extension TMBits {
     
     var osType: OSType {
         switch self {
-        case ._8: return kCVPixelFormatType_32BGRA
+        case ._8: return kCVPixelFormatType_32BGRA // RGBA?
         case ._16: return kCVPixelFormatType_64RGBAHalf
         case ._32: return kCVPixelFormatType_128RGBAFloat
         }
@@ -57,11 +57,12 @@ public extension TMBits {
         var bits: Self?
         
         for currentBits in Self.allCases {
-        
             if currentBits.metalPixelFormat(swapRedAndBlue: false) == metalPixelFormat {
                 bits = currentBits
+                break
             } else if currentBits.metalPixelFormat(swapRedAndBlue: true) == metalPixelFormat {
                 bits = currentBits
+                break
             }
         }
         
