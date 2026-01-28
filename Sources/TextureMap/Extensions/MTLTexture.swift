@@ -88,11 +88,20 @@ extension MTLTexture where Self == MTLTexture {
             throw TMError.resolutionTooHigh(maximum: 16_384)
         }
         
-        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: bits.metalPixelFormat(swapRedAndBlue: swapRedAndBlue), width: Int(resolution.width), height: Int(resolution.height), mipmapped: sampleCount == 1)
+        let pixelFormat: MTLPixelFormat = bits.metalPixelFormat(swapRedAndBlue: swapRedAndBlue)
+        
+        var actualSampleCount = max(1, sampleCount)
+        if actualSampleCount > 1 {
+            if pixelFormat == .rgba32Float || !TextureMap.metalDevice.supportsTextureSampleCount(actualSampleCount) {
+                actualSampleCount = 1
+            }
+        }
+        
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: pixelFormat, width: Int(resolution.width), height: Int(resolution.height), mipmapped: actualSampleCount == 1)
         
         descriptor.usage = usage.textureUsage
-        descriptor.textureType = sampleCount > 1 ? .type2DMultisample : .type2D
-        descriptor.sampleCount = sampleCount
+        descriptor.textureType = actualSampleCount > 1 ? .type2DMultisample : .type2D
+        descriptor.sampleCount = actualSampleCount
         
         guard let texture = TextureMap.metalDevice.makeTexture(descriptor: descriptor) else {
             throw TMError.makeTextureFailed
