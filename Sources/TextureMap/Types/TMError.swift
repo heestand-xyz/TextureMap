@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Metal
 
 enum TMError: LocalizedError {
     
@@ -21,6 +22,8 @@ enum TMError: LocalizedError {
     case makeCommandQueueFailed
     case makeCommandBufferFailed
     case makeBlitCommandEncoderFailed
+    case sampleCountNotSupported(Int)
+    case pixelFormatDoesNotSupportMultisample(MTLPixelFormat)
     
     public var errorDescription: String? {
         switch self {
@@ -48,6 +51,10 @@ enum TMError: LocalizedError {
             return "Texture Map - Texture Array - Make Command Buffer Failed"
         case .makeBlitCommandEncoderFailed:
             return "Texture Map - Texture Array - Make Blit Command Encoder Failed"
+        case .sampleCountNotSupported(let sampleCount):
+            return "Texture Map - Sample Count Not Supported (\(sampleCount))"
+        case .pixelFormatDoesNotSupportMultisample(let pixelFormat):
+            return "Texture Map - Pixel Format Does Not Support Multisample (\(pixelFormat.rawValue))"
         }
     }
 }

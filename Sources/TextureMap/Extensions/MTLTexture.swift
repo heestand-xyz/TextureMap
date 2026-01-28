@@ -90,18 +90,24 @@ extension MTLTexture where Self == MTLTexture {
         
         let pixelFormat: MTLPixelFormat = bits.metalPixelFormat(swapRedAndBlue: swapRedAndBlue)
         
-        var actualSampleCount = max(1, sampleCount)
-        if actualSampleCount > 1 {
-            if pixelFormat == .rgba32Float || !TextureMap.metalDevice.supportsTextureSampleCount(actualSampleCount) {
-                actualSampleCount = 1
+        guard sampleCount >= 1 else {
+            throw TMError.sampleCountNotSupported(sampleCount)
+        }
+        
+        if sampleCount > 1 {
+            guard pixelFormat != .rgba32Float else {
+                throw TMError.pixelFormatDoesNotSupportMultisample(pixelFormat)
+            }
+            guard TextureMap.metalDevice.supportsTextureSampleCount(sampleCount) else {
+                throw TMError.sampleCountNotSupported(sampleCount)
             }
         }
         
-        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: pixelFormat, width: Int(resolution.width), height: Int(resolution.height), mipmapped: actualSampleCount == 1)
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: pixelFormat, width: Int(resolution.width), height: Int(resolution.height), mipmapped: sampleCount == 1)
         
         descriptor.usage = usage.textureUsage
-        descriptor.textureType = actualSampleCount > 1 ? .type2DMultisample : .type2D
-        descriptor.sampleCount = actualSampleCount
+        descriptor.textureType = sampleCount > 1 ? .type2DMultisample : .type2D
+        descriptor.sampleCount = sampleCount
         
         guard let texture = TextureMap.metalDevice.makeTexture(descriptor: descriptor) else {
             throw TMError.makeTextureFailed
