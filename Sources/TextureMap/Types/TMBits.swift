@@ -77,6 +77,8 @@ public extension TMBits {
                 bits = ._8
             } else if metalPixelFormat == .rg8Unorm {
                 bits = ._8
+            } else if metalPixelFormat == .depth32Float {
+                bits = ._32
             }
         }
         
