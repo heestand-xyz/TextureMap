@@ -29,6 +29,25 @@ public extension Image {
 }
 #endif
 
+extension TMImage {
+    public var resolution: CGSize {
+#if os(macOS)
+        guard let representation = representations.compactMap({ $0 as? NSBitmapImageRep }).first else {
+            return size
+        }
+        return CGSize(
+            width: representation.pixelsWide,
+            height: representation.pixelsHigh
+        )
+#else
+        guard let cgImage = cgImage else {
+            return size
+        }
+        return cgImage.size
+#endif
+    }
+}
+
 public extension Bundle {
     
     enum TMImageBundleError: LocalizedError {
