@@ -118,6 +118,20 @@ public extension NSImage {
     func tiffData() -> Data? {
         tiffRepresentation
     }
+    @available(macOS 14.0, *)
+    func exrData() -> Data? {
+        guard let tiffData = tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData),
+              let cgImage = bitmap.cgImage else {
+           return nil
+        }
+        let ciImage = CIImage(cgImage: cgImage)
+        let context = CIContext()
+        guard let data = try? context.openEXRRepresentation(of: ciImage, options: [:]) else {
+            return nil
+        }
+        return data
+    }
 }
 #else
 public extension UIImage {
@@ -134,6 +148,18 @@ public extension UIImage {
         CGImageDestinationAddImage(imageDestination, cgImage, options)
         CGImageDestinationFinalize(imageDestination)
         return data as Data
+    }
+    @available(iOS 17.0, tvOS 17.0, visionOS 1.0, *)
+    func exrData() -> Data? {
+        guard let cgImage = cgImage else {
+            return nil
+        }
+        let ciImage = CIImage(cgImage: cgImage)
+        let context = CIContext()
+        guard let data = try? context.openEXRRepresentation(of: ciImage, options: [:]) else {
+            return nil
+        }
+        return data
     }
 }
 #endif
