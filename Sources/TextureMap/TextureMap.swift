@@ -3,6 +3,7 @@
 //
 
 import Foundation
+import ImageIO
 @preconcurrency import VideoToolbox
 import MetalKit
 import MetalPerformanceShaders
@@ -280,8 +281,30 @@ public extension TextureMap {
     }
     
     static func write(image: TMImage, to url: URL, bits: TMBits, colorSpace: TMColorSpace) throws {
+        try write(
+            image: image,
+            to: url,
+            bits: bits,
+            colorSpace: colorSpace,
+            compressionQuality: 1.0
+        )
+    }
+    
+    static func write(
+        image: TMImage,
+        to url: URL,
+        bits: TMBits,
+        colorSpace: TMColorSpace,
+        compressionQuality: CGFloat
+    ) throws {
         let ciImage: CIImage = try ciImage(image: image)
-        try write(ciImage: ciImage, to: url, bits: bits, colorSpace: colorSpace)
+        try write(
+            ciImage: ciImage,
+            to: url,
+            bits: bits,
+            colorSpace: colorSpace,
+            compressionQuality: compressionQuality
+        )
     }
     
     static func readImage(from url: URL, xdr: Bool = false) throws -> TMImage {
@@ -333,9 +356,54 @@ public extension TextureMap {
         #endif
     }
     
+    static func write(
+        texture: MTLTexture,
+        to url: URL,
+        bits: TMBits,
+        colorSpace: TMColorSpace,
+        compressionQuality: CGFloat = 1.0
+    ) throws {
+        let ciImage: CIImage = try ciImage(texture: texture, colorSpace: colorSpace)
+        try write(
+            ciImage: ciImage,
+            to: url,
+            bits: bits,
+            colorSpace: colorSpace,
+            compressionQuality: compressionQuality
+        )
+    }
+    
     static func write(ciImage: CIImage, to url: URL, bits: TMBits, colorSpace: TMColorSpace) throws {
+        try write(
+            ciImage: ciImage,
+            to: url,
+            bits: bits,
+            colorSpace: colorSpace,
+            compressionQuality: 1.0
+        )
+    }
+    
+    static func write(
+        ciImage: CIImage,
+        to url: URL,
+        bits: TMBits,
+        colorSpace: TMColorSpace,
+        compressionQuality: CGFloat
+    ) throws {
         
         let context = CIContext(options: nil)
+        let fileExtension: String = url.pathExtension.lowercased()
+        
+        if fileExtension == "heic" || fileExtension == "heif" {
+            try writeHEIF(
+                ciImage: ciImage,
+                to: url,
+                bits: bits,
+                colorSpace: colorSpace,
+                compressionQuality: compressionQuality
+            )
+            return
+        }
         
         try context.writePNGRepresentation(
             of: ciImage,
@@ -343,6 +411,82 @@ public extension TextureMap {
             format: bits.ciFormat,
             colorSpace: colorSpace.cgColorSpace,
             options: [:])
+    }
+    
+    static func heifData(
+        texture: MTLTexture,
+        bits: TMBits,
+        colorSpace: TMColorSpace,
+        compressionQuality: CGFloat = 1.0
+    ) throws -> Data {
+        let ciImage: CIImage = try ciImage(texture: texture, colorSpace: colorSpace)
+        return try heifData(
+            ciImage: ciImage,
+            bits: bits,
+            colorSpace: colorSpace,
+            compressionQuality: compressionQuality
+        )
+    }
+    
+    static func heifData(
+        ciImage: CIImage,
+        bits: TMBits,
+        colorSpace: TMColorSpace,
+        compressionQuality: CGFloat = 1.0
+    ) throws -> Data {
+        let context = CIContext(options: nil)
+        let options: [CIImageRepresentationOption: Any] = [
+            kCGImageDestinationLossyCompressionQuality as CIImageRepresentationOption: compressionQuality
+        ]
+        
+        if bits >= ._16 {
+            return try context.heif10Representation(
+                of: ciImage,
+                colorSpace: colorSpace.cgColorSpace,
+                options: options
+            )
+        }
+        
+        guard let data: Data = context.heifRepresentation(
+            of: ciImage,
+            format: bits.ciFormat,
+            colorSpace: colorSpace.cgColorSpace,
+            options: options
+        ) else {
+            throw TMError.createHEIFDataFailed
+        }
+        
+        return data
+    }
+    
+    static func writeHEIF(
+        ciImage: CIImage,
+        to url: URL,
+        bits: TMBits,
+        colorSpace: TMColorSpace,
+        compressionQuality: CGFloat = 1.0
+    ) throws {
+        let context = CIContext(options: nil)
+        let options: [CIImageRepresentationOption: Any] = [
+            kCGImageDestinationLossyCompressionQuality as CIImageRepresentationOption: compressionQuality
+        ]
+        
+        if bits >= ._16 {
+            try context.writeHEIF10Representation(
+                of: ciImage,
+                to: url,
+                colorSpace: colorSpace.cgColorSpace,
+                options: options
+            )
+        } else {
+            try context.writeHEIFRepresentation(
+                of: ciImage,
+                to: url,
+                format: bits.ciFormat,
+                colorSpace: colorSpace.cgColorSpace,
+                options: options
+            )
+        }
     }
     
     static func readImage(from url: URL, xdr: Bool = false) throws -> CIImage {

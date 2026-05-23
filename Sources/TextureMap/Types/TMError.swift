@@ -13,6 +13,7 @@ enum TMError: LocalizedError {
     case cgImageNotFound
     case createCGImageFailed
     case createCIImageFailed
+    case createHEIFDataFailed
     case ciImageColorSpaceNotFound
     case tiffRepresentationNotFound
     case resolutionZero
@@ -33,6 +34,8 @@ enum TMError: LocalizedError {
             return "Texture Map - Create CGImage Failed"
         case .createCIImageFailed:
             return "Texture Map - Create CIImage Failed"
+        case .createHEIFDataFailed:
+            return "Texture Map - Create HEIF Data Failed"
         case .ciImageColorSpaceNotFound:
             return "Texture Map - CIImage Color Space Not Found"
         case .tiffRepresentationNotFound:
