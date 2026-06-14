@@ -96,10 +96,12 @@ public extension TMBits {
     init(cgImage: CGImage) throws {
         var bits: Self!
         switch cgImage.bitsPerComponent {
-        case 8:
+        case ...8:
             bits = ._8
-        case 16:
+        case ...16:
             bits = ._16
+        case ...32:
+            bits = ._32
         default:
             throw TMBitsError.bitsPerComponentNotSupported(cgImage.bitsPerComponent)
         }
