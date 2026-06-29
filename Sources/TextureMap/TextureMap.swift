@@ -220,7 +220,7 @@ public extension TextureMap {
         let osType: OSType = CVPixelBufferGetPixelFormatType(pixelBuffer)
         let isGrayscale: Bool = osType == OSType(1278226488)
         let isPRGB: Bool = osType == OSType(1278226534)
-        let isVUV: Bool = osType == OSType(875704438)
+        let isVUV: Bool = osType == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange || osType == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
         let isTwo32: Bool = osType == kCVPixelFormatType_TwoComponent32Float
         let format: MTLPixelFormat
         if isTwo32 {
@@ -228,8 +228,8 @@ public extension TextureMap {
         } else if isVUV {
             format = planeIndex == 1 ? .rg8Unorm : .r8Unorm
             if planeIndex == 1 {
-                width /= 2
-                height /= 2
+                width = CVPixelBufferGetWidthOfPlane(pixelBuffer, planeIndex)
+                height = CVPixelBufferGetHeightOfPlane(pixelBuffer, planeIndex)
             }
         } else {
             format = isPRGB ? .rg16Float : isGrayscale ? .r8Unorm : .bgra8Unorm
