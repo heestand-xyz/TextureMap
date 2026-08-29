@@ -150,7 +150,13 @@ public extension TMColorSpace {
             }
         }
         
-        if cgColorSpace.name == CGColorSpace.extendedSRGB {
+        if cgColorSpace.name == CGColorSpace.extendedLinearSRGB {
+            self = .linearSRGB
+            return
+        } else if cgColorSpace.name == CGColorSpace.extendedLinearDisplayP3 {
+            self = .linearDisplayP3
+            return
+        } else if cgColorSpace.name == CGColorSpace.extendedSRGB {
             self = .nonLinearDisplayP3
             return
         } else if cgColorSpace == CGColorSpace(name: CGColorSpace.itur_2100_PQ)! ||
