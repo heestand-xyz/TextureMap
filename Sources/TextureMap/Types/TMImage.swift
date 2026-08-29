@@ -118,7 +118,6 @@ public extension NSImage {
     func tiffData() -> Data? {
         tiffRepresentation
     }
-    @available(macOS 14.0, *)
     func exrData() -> Data? {
         guard let tiffData = tiffRepresentation,
               let bitmap = NSBitmapImageRep(data: tiffData),
@@ -149,7 +148,6 @@ public extension UIImage {
         CGImageDestinationFinalize(imageDestination)
         return data as Data
     }
-    @available(iOS 17.0, tvOS 17.0, visionOS 1.0, *)
     func exrData() -> Data? {
         guard let cgImage = cgImage else {
             return nil

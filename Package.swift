@@ -5,9 +5,9 @@ import PackageDescription
 let package = Package(
     name: "TextureMap",
     platforms: [
-        .iOS(.v16),
-        .tvOS(.v16),
-        .macOS(.v13),
+        .iOS(.v17),
+        .tvOS(.v17),
+        .macOS(.v14),
         .visionOS(.v1)
     ],
     products: [

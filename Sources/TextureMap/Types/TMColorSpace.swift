@@ -116,6 +116,27 @@ public extension TMColorSpace {
     }
 }
 
+// MARK: - Linear
+
+public extension TMColorSpace {
+    
+    /// The linear light counterpart of this color space.
+    ///
+    /// Used when encoding scene referred formats, like `OpenEXR`.
+    var linear: TMColorSpace {
+        get throws {
+            switch self {
+            case .linearSRGB, .nonLinearSRGB, .xdr:
+                return .linearSRGB
+            case .linearDisplayP3, .nonLinearDisplayP3:
+                return .linearDisplayP3
+            case .custom(let cgColorSpace):
+                throw TMColorSpaceError.notSupported(cgColorSpace)
+            }
+        }
+    }
+}
+
 // MARK: - Life Cycle
 
 public extension TMColorSpace {

@@ -322,10 +322,8 @@ public extension TextureMap {
         var options: [CIImageOption : Any] = [:]
         options[.colorSpace] = colorSpace.cgColorSpace
         if colorSpace == .xdr {
-            if #available(iOS 17.0, tvOS 17.0, macOS 14.0, *) {
-                options[.expandToHDR] = true
-                options[.colorSpace] = TMColorSpace.sRGB.cgColorSpace
-            }
+            options[.expandToHDR] = true
+            options[.colorSpace] = TMColorSpace.sRGB.cgColorSpace
         }
         
         guard let ciImage = CIImage(mtlTexture: texture, options: options) else {
@@ -390,27 +388,15 @@ public extension TextureMap {
         colorSpace: TMColorSpace,
         compressionQuality: CGFloat
     ) throws {
-        
-        let context = CIContext(options: nil)
-        let fileExtension: String = url.pathExtension.lowercased()
-        
-        if fileExtension == "heic" || fileExtension == "heif" {
-            try writeHEIF(
-                ciImage: ciImage,
-                to: url,
-                bits: bits,
-                colorSpace: colorSpace,
-                compressionQuality: compressionQuality
-            )
-            return
-        }
-        
-        try context.writePNGRepresentation(
-            of: ciImage,
+        let format = try TMImageFileFormat(url: url)
+        try write(
+            ciImage: ciImage,
             to: url,
-            format: bits.ciFormat,
-            colorSpace: colorSpace.cgColorSpace,
-            options: [:])
+            format: format,
+            bits: bits,
+            colorSpace: colorSpace,
+            compressionQuality: compressionQuality
+        )
     }
     
     static func heifData(
@@ -491,9 +477,7 @@ public extension TextureMap {
     
     static func readImage(from url: URL, xdr: Bool = false) throws -> CIImage {
         var options: [CIImageOption: Any] = [:]
-        if #available(iOS 17.0, tvOS 17.0, macOS 14.0, *) {
-            options[.expandToHDR] = xdr
-        }
+        options[.expandToHDR] = xdr
         guard let ciImage = CIImage(contentsOf: url,
                                     options: options) else {
             throw TextureError.failedToReadCIImageFromURL
