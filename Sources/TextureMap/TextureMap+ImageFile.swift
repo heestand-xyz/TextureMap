@@ -135,6 +135,8 @@ extension TextureMap {
     /// Open EXR Data
     ///
     /// `OpenEXR` is scene referred, the image is encoded in linear light.
+    /// Pass a `ciImage` that is already tagged with `colorSpace`, so the values
+    /// are written as they are instead of being run through a transfer curve.
     ///
     /// `CIContext.openEXRRepresentation(of:options:)` always encodes half float,
     /// `ImageIO` is used instead to preserve the bit depth of 32 bit graphics.
