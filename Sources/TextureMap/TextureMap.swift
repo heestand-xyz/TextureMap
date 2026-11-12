@@ -78,15 +78,26 @@ public extension TextureMap {
     }
     
     static func texture(image: TMImage) throws -> MTLTexture {
+        try textureWithAlphaInfo(image: image).texture
+    }
+
+    /// Returns whether the loaded texture still contains straight-alpha color components.
+    static func textureWithAlphaInfo(image: TMImage) throws -> (texture: MTLTexture, requiresAlphaPremultiplication: Bool) {
 
         guard let data = image.tiffData() else {
             throw TextureError.noImageDataFound
         }
+
+        let imageSource: CGImageSource = try cgImageSource(data: data)
+        guard let cgImage: CGImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
+            throw ImageSourceError.imageNotFound
+        }
+        let requiresAlphaPremultiplication: Bool = cgImage.alphaInfo == .first || cgImage.alphaInfo == .last
         
         do {
             let loader = MTKTextureLoader(device: metalDevice)
             let texture: MTLTexture = try loader.newTexture(data: data, options: nil)
-            return texture
+            return (texture, requiresAlphaPremultiplication)
         } catch {
             print("TextureMap - Texture Conversion Failed - Reverting to Backup Method")
             let bits = try TMBits(image: image)
@@ -107,7 +118,8 @@ public extension TextureMap {
                 throw TextureError.imageToTextureConversionFailed
             }
             ciContext.render(ciImage, to: texture, commandBuffer: nil, bounds: bounds, colorSpace: colorSpace.cgColorSpace)
-            return texture
+            // Core Image renders premultiplied pixels already.
+            return (texture, false)
         }
     }
     
